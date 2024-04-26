@@ -10,7 +10,7 @@ type CommandHandler interface {
 	OnMessage(msg *botapi.Message) error
 }
 
-func ScanIds(bot *botapi.BotAPI, cmd CommandHandler) {
+func ListenForMessages(bot *botapi.BotAPI, cmd CommandHandler) {
 	u := botapi.NewUpdate(0)
 	u.Timeout = 60
 

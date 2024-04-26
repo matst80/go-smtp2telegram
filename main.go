@@ -167,19 +167,20 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 				return err
 			}
 		} else if command == "words" {
-			m := botapi.NewMessage(msg.Chat.ID, "Updating warning words")
+			m := botapi.NewMessage(msg.Chat.ID, "Updating warning words...")
 			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 			if err := cmd.spam.UpdateWarningWordsFromUrl(cmd.config.WarningWordsUrl); err != nil {
 				return err
 			}
-			m = botapi.NewMessage(msg.Chat.ID, "Updated warning words")
+			m.Text = "Updated warning words"
+			//m = botapi.NewMessage(msg.Chat.ID, "Updated warning words")
 			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 		} else if command == "start" {
-			m := botapi.NewMessage(msg.Chat.ID, "Hello! i got your message, and id")
+			m := botapi.NewMessage(msg.Chat.ID, "Hello! I got your message, id logged on the server")
 			log.Printf("[%s %s] %d", msg.From.FirstName, msg.From.LastName, msg.Chat.ID)
 			if _, err := cmd.bot.Send(m); err != nil {
 				return err
@@ -236,7 +237,7 @@ func main() {
 		s.Debug = os.Stdout
 	}
 
-	go ScanIds(bot, &commandHandler{
+	go ListenForMessages(bot, &commandHandler{
 		spam:   spm,
 		config: &config,
 		bot:    bot,
