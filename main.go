@@ -64,12 +64,48 @@ func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	return nil
 }
 
-func (s *session) Data(r io.Reader) error {
-	email, err := letters.ParseEmail(r)
+func saveHtml(userId int64, email letters.Email) error {
+	// Save email to a file
+	err := os.MkdirAll(fmt.Sprintf("mail/%d", userId), 0755)
 	if err != nil {
 		return err
 	}
-	s.email = email
+	file, err := os.Create(fmt.Sprintf("mail/%d/%s.html", userId, email.Headers.MessageID))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(email.HTML)
+	if err != nil {
+		return err
+	}
+	for i, attachment := range email.AttachedFiles {
+		file, err := os.Create(fmt.Sprintf("mail/%d/%s-%d", userId, email.Headers.MessageID, i))
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = file.Write(attachment.Data)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *session) Data(r io.Reader) error {
+	if len(s.to) > 0 {
+		email, err := letters.ParseEmail(r)
+		if err != nil {
+			return err
+		}
+		s.email = email
+		for _, userId := range s.to {
+			go saveHtml(userId, s.email)
+		}
+	}
 	return nil
 }
 
@@ -116,6 +152,24 @@ func getConfig() Config {
 	return config
 }
 
+func scanIds(bot *botapi.BotAPI) {
+	u := botapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := bot.GetUpdatesChan(u)
+
+	for update := range updates {
+		if update.Message != nil {
+			log.Printf("[%s] %d", update.Message.From.UserName, update.Message.Chat.ID)
+
+			msg := botapi.NewMessage(update.Message.Chat.ID, "Mail bot got your message, thanks")
+			msg.ReplyToMessageID = update.Message.MessageID
+
+			bot.Send(msg)
+		}
+	}
+}
+
 func main() {
 	config := getConfig()
 
@@ -140,24 +194,7 @@ func main() {
 		s.Debug = os.Stdout
 	}
 
-	if os.Getenv("SCAN") == "true" {
-		log.Printf("Scanning for messages")
-		u := botapi.NewUpdate(0)
-		u.Timeout = 60
-
-		updates := bot.GetUpdatesChan(u)
-
-		for update := range updates {
-			if update.Message != nil {
-				log.Printf("[%s] %d", update.Message.From.UserName, update.Message.Chat.ID)
-
-				msg := botapi.NewMessage(update.Message.Chat.ID, "Mail bot got your message, thanks")
-				msg.ReplyToMessageID = update.Message.MessageID
-
-				bot.Send(msg)
-			}
-		}
-	}
+	go scanIds(bot)
 
 	log.Println("Starting SMTP server at", s.Addr)
 	log.Fatal(s.ListenAndServe())
