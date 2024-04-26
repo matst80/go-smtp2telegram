@@ -15,7 +15,7 @@ import (
 
 type backend struct {
 	bot   *botapi.BotAPI
-	spam  *spam
+	spam  *Spam
 	users []User
 }
 
@@ -119,6 +119,7 @@ func (s *session) Logout() error {
 	hasSent := false
 	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
 	if isSpam {
+		s.backend.spam.LogSpamIp(getIpFromAddr(s.client))
 		log.Printf("Discarding email, spam detected %s %s", s.from, s.client)
 		return nil
 	}
@@ -141,7 +142,7 @@ func (s *session) Logout() error {
 }
 
 type commandHandler struct {
-	spam   *spam
+	spam   *Spam
 	config *Config
 	bot    *botapi.BotAPI
 }
@@ -190,10 +191,11 @@ func main() {
 		log.Panic(err)
 	}
 
-	spm := &spam{
-		spamWords:    config.StopWords,
-		warningWords: config.WarningWords,
-		blockedIps:   config.BlockedIps,
+	spm := &Spam{
+		SpamWords:    config.StopWords,
+		WarningWords: config.WarningWords,
+		BlockedIps:   config.BlockedIps,
+		MaxSpamCount: 5,
 	}
 	if config.BlockedIpUrl != "" {
 		err := spm.UpdateBlockedIpsFromUrl(config.BlockedIpUrl)
