@@ -11,12 +11,17 @@ type Config struct {
 	Token           string   `json:"token"`
 	Domain          string   `json:"domain"`
 	Listen          string   `json:"listen"`
-	Users           []user   `json:"users"`
+	Users           []User   `json:"users"`
 	StopWords       []string `json:"stopWords"`
 	WarningWords    []string `json:"warningWords"`
 	BlockedIps      []string `json:"blockedIps"`
 	BlockedIpUrl    string   `json:"blockedIpUrl"`
 	WarningWordsUrl string   `json:"warningWordsUrl"`
+}
+
+type User struct {
+	Email  string `json:"email"`
+	ChatId int64  `json:"chatId"`
 }
 
 func GetConfig() Config {

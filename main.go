@@ -13,15 +13,10 @@ import (
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type user struct {
-	Email  string `json:"email"`
-	ChatId int64  `json:"chatId"`
-}
-
 type backend struct {
 	bot   *botapi.BotAPI
 	spam  *spam
-	users []user
+	users []User
 }
 
 type session struct {
@@ -156,36 +151,28 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 		command := msg.Command()
 		if command == "ips" {
 			m := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips...")
-			if _, err := cmd.bot.Send(m); err != nil {
-				return err
-			}
+			cmd.bot.Send(m)
 			if err := cmd.spam.UpdateBlockedIpsFromUrl(cmd.config.BlockedIpUrl); err != nil {
 				return err
 			}
 			//m = botapi.NewMessage(msg.Chat.ID, "Updated blocked ips")
 			m.Text = "Updated blocked ips"
-			if _, err := cmd.bot.Send(m); err != nil {
-				return err
-			}
+			cmd.bot.Send(m)
 		} else if command == "words" {
 			m := botapi.NewMessage(msg.Chat.ID, "Updating warning words...")
-			if _, err := cmd.bot.Send(m); err != nil {
-				return err
-			}
+			cmd.bot.Send(m)
+
 			if err := cmd.spam.UpdateWarningWordsFromUrl(cmd.config.WarningWordsUrl); err != nil {
 				return err
 			}
+
 			m.Text = "Updated warning words"
 			//m = botapi.NewMessage(msg.Chat.ID, "Updated warning words")
-			if _, err := cmd.bot.Send(m); err != nil {
-				return err
-			}
+			cmd.bot.Send(m)
 		} else if command == "start" {
 			m := botapi.NewMessage(msg.Chat.ID, "Hello! I got your message, id logged on the server")
 			log.Printf("[%s %s] %d", msg.From.FirstName, msg.From.LastName, msg.Chat.ID)
-			if _, err := cmd.bot.Send(m); err != nil {
-				return err
-			}
+			cmd.bot.Send(m)
 		} else {
 			log.Printf("Unknown command %s", command)
 		}
