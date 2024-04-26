@@ -155,14 +155,15 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 	if msg.IsCommand() {
 		command := msg.Command()
 		if command == "ips" {
-			m := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips")
+			m := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips...")
 			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 			if err := cmd.spam.UpdateBlockedIpsFromUrl(cmd.config.BlockedIpUrl); err != nil {
 				return err
 			}
-			m = botapi.NewMessage(msg.Chat.ID, "Updated blocked ips")
+			//m = botapi.NewMessage(msg.Chat.ID, "Updated blocked ips")
+			m.Text = "Updated blocked ips"
 			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
