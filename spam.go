@@ -13,14 +13,21 @@ type spam struct {
 	blockedIps   []string
 }
 
-func (s *spam) IsSpamContent(text string) bool {
-	if text == "" {
+func (s *spam) IsSpamHtml(html string) bool {
+	if html == "" {
 		return true
 	}
 	for _, word := range s.spamWords {
-		if strings.Contains(text, word) {
+		if strings.Contains(html, word) {
 			return true
 		}
+	}
+	return false
+}
+
+func (s *spam) IsSpamContent(text string) bool {
+	if text == "" {
+		return true
 	}
 	numberOfWords := len(strings.Fields(text))
 	var warningCount = 0

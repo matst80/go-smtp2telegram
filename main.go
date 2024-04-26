@@ -117,7 +117,7 @@ func textContent(s *session) string {
 
 func (s *session) Logout() error {
 	hasSent := false
-	isSpam := s.backend.spam.IsSpamContent(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
+	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
 	if isSpam {
 		log.Printf("Discarding email, spam detected %s %s", s.from, s.client)
 		return nil
