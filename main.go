@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 
 	"github.com/mnako/letters"
@@ -31,6 +32,7 @@ type backend struct {
 }
 
 type session struct {
+	client  net.Addr
 	backend *backend
 	from    string
 	to      []int64
@@ -38,7 +40,9 @@ type session struct {
 }
 
 func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
+
 	return &session{
+		client:  c.Conn().RemoteAddr(),
 		backend: bkd,
 		to:      []int64{},
 		email:   letters.Email{},
@@ -96,7 +100,7 @@ func (s *session) Logout() error {
 
 	}
 	if !hasSent {
-		log.Printf("Discarding email, no recipients found %s", s.from)
+		log.Printf("Discarding email, no recipients found %s %s", s.from, s.client)
 	}
 	return nil
 }
