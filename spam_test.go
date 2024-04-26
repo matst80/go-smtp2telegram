@@ -91,12 +91,11 @@ func TestUpdateWarningWords(t *testing.T) {
 }
 
 func TestSpamIdLogging(t *testing.T) {
-	config := GetConfig()
 	ip := "127.0.0.2"
 	spm := &Spam{
 		SpamWords:    []string{},
 		WarningWords: []string{},
-		BlockedIps:   config.BlockedIps,
+		BlockedIps:   []string{},
 		MaxSpamCount: 3,
 	}
 	spm.LogSpamIp(ip)

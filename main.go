@@ -141,50 +141,11 @@ func (s *session) Logout() error {
 	return nil
 }
 
-type commandHandler struct {
-	spam   *Spam
-	config *Config
-	bot    *botapi.BotAPI
-}
-
-func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
-	if msg.IsCommand() {
-		command := msg.Command()
-		if command == "ips" {
-			m := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips...")
-			cmd.bot.Send(m)
-			if err := cmd.spam.UpdateBlockedIpsFromUrl(cmd.config.BlockedIpUrl); err != nil {
-				return err
-			}
-			//m = botapi.NewMessage(msg.Chat.ID, "Updated blocked ips")
-			m.Text = "Updated blocked ips"
-			cmd.bot.Send(m)
-		} else if command == "words" {
-			m := botapi.NewMessage(msg.Chat.ID, "Updating warning words...")
-			cmd.bot.Send(m)
-
-			if err := cmd.spam.UpdateWarningWordsFromUrl(cmd.config.WarningWordsUrl); err != nil {
-				return err
-			}
-
-			m.Text = "Updated warning words"
-			//m = botapi.NewMessage(msg.Chat.ID, "Updated warning words")
-			cmd.bot.Send(m)
-		} else if command == "start" {
-			m := botapi.NewMessage(msg.Chat.ID, "Hello! I got your message, id logged on the server")
-			log.Printf("[%s %s] %d", msg.From.FirstName, msg.From.LastName, msg.Chat.ID)
-			cmd.bot.Send(m)
-		} else {
-			log.Printf("Unknown command %s", command)
-		}
-	} else {
-		log.Printf("Unknown message %s", msg.Text)
-	}
-	return nil
-}
-
 func main() {
-	config := GetConfig()
+	config, err := GetConfig("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	bot, err := botapi.NewBotAPI(config.Token)
 	if err != nil {
@@ -193,8 +154,8 @@ func main() {
 
 	spm := &Spam{
 		SpamWords:    config.StopWords,
-		WarningWords: config.WarningWords,
-		BlockedIps:   config.BlockedIps,
+		WarningWords: []string{},
+		BlockedIps:   []string{},
 		MaxSpamCount: 5,
 	}
 	if config.BlockedIpUrl != "" {
