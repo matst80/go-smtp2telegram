@@ -31,7 +31,7 @@ func GetConfig() Config {
 	}
 	var config Config
 	if err := json.Unmarshal([]byte(bytes), &config); err != nil {
-		log.Fatal("Error parsing config.json")
+		log.Fatal("Error parsing config.json", err)
 	}
 	return config
 }

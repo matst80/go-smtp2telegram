@@ -160,36 +160,40 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 	if msg.IsCommand() {
 		command := msg.Command()
 		if command == "ips" {
-			msg1 := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips")
-			if _, err := cmd.bot.Send(msg1); err != nil {
+			m := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips")
+			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 			if err := cmd.spam.UpdateBlockedIpsFromUrl(cmd.config.BlockedIpUrl); err != nil {
 				return err
 			}
-			msg2 := botapi.NewMessage(msg.Chat.ID, "Updated blocked ips")
-			if _, err := cmd.bot.Send(msg2); err != nil {
+			m = botapi.NewMessage(msg.Chat.ID, "Updated blocked ips")
+			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 		} else if command == "words" {
-			msg1 := botapi.NewMessage(msg.Chat.ID, "Updating warning words")
-			if _, err := cmd.bot.Send(msg1); err != nil {
+			m := botapi.NewMessage(msg.Chat.ID, "Updating warning words")
+			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 			if err := cmd.spam.UpdateWarningWordsFromUrl(cmd.config.WarningWordsUrl); err != nil {
 				return err
 			}
-			msg2 := botapi.NewMessage(msg.Chat.ID, "Updated warning words")
-			if _, err := cmd.bot.Send(msg2); err != nil {
+			m = botapi.NewMessage(msg.Chat.ID, "Updated warning words")
+			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
 		} else if command == "start" {
 			m := botapi.NewMessage(msg.Chat.ID, "Hello! i got your message, and id")
-			log.Printf("[%s] %d", msg.From.UserName, msg.Chat.ID)
+			log.Printf("[%s %s] %d", msg.From.FirstName, msg.From.LastName, msg.Chat.ID)
 			if _, err := cmd.bot.Send(m); err != nil {
 				return err
 			}
+		} else {
+			log.Printf("Unknown command %s", command)
 		}
+	} else {
+		log.Printf("Unknown message %s", msg.Text)
 	}
 	return nil
 }
