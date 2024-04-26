@@ -32,8 +32,6 @@ type session struct {
 	email   letters.Email
 }
 
-var addr map[string]int
-
 func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	client := c.Conn().RemoteAddr()
 
@@ -43,10 +41,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 		log.Printf("Blocked address %s", client)
 		return nil, err
 	}
-	if addr == nil && ip != "" {
-		addr[ip]++
-		log.Print(addr)
-	}
+
 	return &session{
 		client:  client,
 		backend: bkd,
@@ -145,7 +140,7 @@ func (s *session) Logout() error {
 
 	}
 	if !hasSent {
-		log.Printf("Discarding email, no recipients found %s %s", s.from, s.client)
+		log.Printf("Discarding email, no recipient, from: %s (%s)", s.from, s.client)
 	}
 	return nil
 }
