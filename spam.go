@@ -13,7 +13,6 @@ type spam struct {
 	blockedIps   []string
 }
 
-// IsSpam checks if a given string contains any spam words
 func (s *spam) IsSpamContent(text string) bool {
 	if text == "" {
 		return true
@@ -44,21 +43,6 @@ func (s *spam) AllowedAddress(clientIp string) error {
 	return nil
 }
 
-func downloadLines(url string) ([]string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	//We Read the response body on the line below.
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	//Convert the body to type string
-	sb := string(body)
-	return strings.Split(sb, "\n"), nil
-}
-
 func (s *spam) UpdateBlockedIpsFromUrl(url string) error {
 	lines, err := downloadLines(url)
 	if err != nil {
@@ -75,4 +59,18 @@ func (s *spam) UpdateWarningWordsFromUrl(url string) error {
 	}
 	s.warningWords = lines
 	return nil
+}
+
+func downloadLines(url string) ([]string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(string(body), "\n"), nil
 }
