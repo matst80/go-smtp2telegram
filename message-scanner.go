@@ -6,7 +6,11 @@ import (
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func ScanIds(bot *botapi.BotAPI) {
+type CommandHandler interface {
+	OnMessage(msg *botapi.Message) error
+}
+
+func ScanIds(bot *botapi.BotAPI, cmd CommandHandler) {
 	u := botapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -14,12 +18,10 @@ func ScanIds(bot *botapi.BotAPI) {
 
 	for update := range updates {
 		if update.Message != nil {
-			log.Printf("[%s] %d", update.Message.From.UserName, update.Message.Chat.ID)
-
-			msg := botapi.NewMessage(update.Message.Chat.ID, "Mail bot got your message, thanks")
-			msg.ReplyToMessageID = update.Message.MessageID
-
-			bot.Send(msg)
+			err := cmd.OnMessage(update.Message)
+			if err != nil {
+				log.Printf("Error: %v", err)
+			}
 		}
 	}
 }
