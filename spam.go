@@ -2,26 +2,30 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 )
 
-var spamWords = []string{".ru/", "singleladies", ""}
-var warningWords = []string{"dejt", "dating", "$$$", "cash", "money", "hacked", "password", "dick", "earn", "discount", "prince", "100%", "income", "fantastic", "bargain", "credit"}
-var blockedIps = []string{"45.88.90.75", "45.88.90.115"}
+type spam struct {
+	spamWords    []string
+	warningWords []string
+	blockedIps   []string
+}
 
 // IsSpam checks if a given string contains any spam words
-func IsSpamContent(text string) bool {
+func (s *spam) IsSpamContent(text string) bool {
 	if text == "" {
 		return true
 	}
-	for _, word := range spamWords {
+	for _, word := range s.spamWords {
 		if strings.Contains(text, word) {
 			return true
 		}
 	}
 	numberOfWords := len(strings.Fields(text))
 	var warningCount = 0
-	for _, word := range warningWords {
+	for _, word := range s.warningWords {
 		if strings.Contains(text, word) {
 			warningCount++
 		}
@@ -31,11 +35,27 @@ func IsSpamContent(text string) bool {
 
 var ErrBlocked = fmt.Errorf("address blocked")
 
-func AllowedAddress(clientIp string) error {
-	for _, ip := range blockedIps {
+func (s *spam) AllowedAddress(clientIp string) error {
+	for _, ip := range s.blockedIps {
 		if strings.Contains(clientIp, ip) {
 			return ErrBlocked
 		}
 	}
+	return nil
+}
+
+func (s *spam) UpdateBlockedIps(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	//We Read the response body on the line below.
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	//Convert the body to type string
+	sb := string(body)
+	s.blockedIps = strings.Split(sb, "\n")
 	return nil
 }

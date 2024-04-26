@@ -27,6 +27,7 @@ type user struct {
 
 type backend struct {
 	bot   *botapi.BotAPI
+	spam  *spam
 	users []user
 }
 
@@ -44,7 +45,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	client := c.Conn().RemoteAddr()
 
 	ip := getIpFromAddr(client)
-	err := AllowedAddress(ip)
+	err := bkd.spam.AllowedAddress(ip)
 	if err != nil {
 		log.Printf("Blocked address %s", client)
 		return nil, err
@@ -133,7 +134,7 @@ func textContent(s *session) string {
 
 func (s *session) Logout() error {
 	hasSent := false
-	isSpam := IsSpamContent(s.email.HTML) || IsSpamContent(s.email.Text)
+	isSpam := s.backend.spam.IsSpamContent(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
 	if isSpam {
 		log.Printf("Discarding email, spam detected %s %s", s.from, s.client)
 		return nil
