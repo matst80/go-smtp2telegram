@@ -3,28 +3,38 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
 
-type spam struct {
-	spamWords    []string
-	warningWords []string
-	blockedIps   []string
+type Spam struct {
+	SpamWords    []string
+	WarningWords []string
+	BlockedIps   []string
+	MaxSpamCount int
+	spamIps      map[string]int
 }
 
-func (s *spam) IsSpamContent(text string) bool {
-	if text == "" {
+func (s *Spam) IsSpamHtml(html string) bool {
+	if html == "" {
 		return true
 	}
-	for _, word := range s.spamWords {
-		if strings.Contains(text, word) {
+	for _, word := range s.SpamWords {
+		if strings.Contains(html, word) {
 			return true
 		}
 	}
+	return false
+}
+
+func (s *Spam) IsSpamContent(text string) bool {
+	if text == "" {
+		return true
+	}
 	numberOfWords := len(strings.Fields(text))
 	var warningCount = 0
-	for _, word := range s.warningWords {
+	for _, word := range s.WarningWords {
 		if strings.Contains(text, word) {
 			warningCount++
 		}
@@ -34,8 +44,8 @@ func (s *spam) IsSpamContent(text string) bool {
 
 var ErrBlocked = fmt.Errorf("address blocked")
 
-func (s *spam) AllowedAddress(clientIp string) error {
-	for _, ip := range s.blockedIps {
+func (s *Spam) AllowedAddress(clientIp string) error {
+	for _, ip := range s.BlockedIps {
 		if strings.Contains(clientIp, ip) {
 			return ErrBlocked
 		}
@@ -43,21 +53,33 @@ func (s *spam) AllowedAddress(clientIp string) error {
 	return nil
 }
 
-func (s *spam) UpdateBlockedIpsFromUrl(url string) error {
+func (s *Spam) UpdateBlockedIpsFromUrl(url string) error {
 	lines, err := downloadLines(url)
 	if err != nil {
 		return err
 	}
-	s.blockedIps = lines
+	s.BlockedIps = lines
 	return nil
 }
 
-func (s *spam) UpdateWarningWordsFromUrl(url string) error {
+func (s *Spam) UpdateWarningWordsFromUrl(url string) error {
 	lines, err := downloadLines(url)
 	if err != nil {
 		return err
 	}
-	s.warningWords = lines
+	s.WarningWords = lines
+	return nil
+}
+
+func (s *Spam) LogSpamIp(ip string) error {
+	if s.spamIps == nil {
+		s.spamIps = make(map[string]int)
+	}
+	s.spamIps[ip]++
+	if s.spamIps[ip] > s.MaxSpamCount {
+		s.BlockedIps = append(s.BlockedIps, ip)
+		log.Print("Blocking ip", ip)
+	}
 	return nil
 }
 
