@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -39,10 +38,23 @@ type session struct {
 	email   letters.Email
 }
 
-func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
+var addr map[string]int
 
+func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
+	client := c.Conn().RemoteAddr()
+
+	ip := getIpFromAddr(client)
+	err := AllowedAddress(ip)
+	if err != nil {
+		log.Printf("Blocked address %s", client)
+		return nil, err
+	}
+	if addr == nil && ip != "" {
+		addr[ip]++
+		log.Print(addr)
+	}
 	return &session{
-		client:  c.Conn().RemoteAddr(),
+		client:  client,
 		backend: bkd,
 		to:      []int64{},
 		email:   letters.Email{},
@@ -121,12 +133,15 @@ func textContent(s *session) string {
 
 func (s *session) Logout() error {
 	hasSent := false
-
+	isSpam := IsSpamContent(s.email.HTML) || IsSpamContent(s.email.Text)
+	if isSpam {
+		log.Printf("Discarding email, spam detected %s %s", s.from, s.client)
+		return nil
+	}
 	for _, chatId := range s.to {
 
 		content := textContent(s)
 
-		// fmt.Sprintf("From: %s\nSubject: %s\n\n%s", s.from, s.email.Headers.Subject, s.email.Text)
 		msg := botapi.NewMessage(chatId, content)
 
 		s.backend.bot.Send(msg)
@@ -141,41 +156,8 @@ func (s *session) Logout() error {
 	return nil
 }
 
-func getConfig() Config {
-	configFile, err := os.Open("config.json")
-	if err != nil {
-		log.Fatal("Error opening config.json")
-	}
-	defer configFile.Close()
-	bytes, err := io.ReadAll(configFile)
-	if err != nil {
-		log.Fatal("Error reading config.json")
-	}
-	var config Config
-	json.Unmarshal([]byte(bytes), &config)
-	return config
-}
-
-func scanIds(bot *botapi.BotAPI) {
-	u := botapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates := bot.GetUpdatesChan(u)
-
-	for update := range updates {
-		if update.Message != nil {
-			log.Printf("[%s] %d", update.Message.From.UserName, update.Message.Chat.ID)
-
-			msg := botapi.NewMessage(update.Message.Chat.ID, "Mail bot got your message, thanks")
-			msg.ReplyToMessageID = update.Message.MessageID
-
-			bot.Send(msg)
-		}
-	}
-}
-
 func main() {
-	config := getConfig()
+	config := GetConfig()
 
 	bot, err := botapi.NewBotAPI(config.Token)
 	if err != nil {
@@ -198,7 +180,7 @@ func main() {
 		s.Debug = os.Stdout
 	}
 
-	go scanIds(bot)
+	go ScanIds(bot)
 
 	log.Println("Starting SMTP server at", s.Addr)
 	log.Fatal(s.ListenAndServe())
