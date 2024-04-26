@@ -14,4 +14,4 @@
 
 ## Configuration
 
-The `config.json` file is used to store configuration settings for your project. It is typically located in the root directory of your project. Example can be found in `config.json.example` file might look like:
+The `config.json` file is used to store configuration settings for your project. It is typically located in the root directory of your project. Example can be found in `config.example.json` file might look like:

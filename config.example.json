@@ -1,0 +1,39 @@
+{
+	"listen": "0.0.0.0:25",
+	"domain": "localhost",
+	"token": "TELEGRAM_TOKEN",
+	"users": [
+		{
+			"email": "user@domain.xyz",
+			"chatId": 123456789
+		}
+	],
+	"stopWords": [
+		".ru/",
+		"singleladies",
+		"<script"
+	],
+	"warningWords": [
+		"dejt",
+		"dating",
+		"$$$",
+		"cash",
+		"money",
+		"hacked",
+		"password",
+		"dick",
+		"earn",
+		"discount",
+		"prince",
+		"100%",
+		"income",
+		"fantastic",
+		"bargain",
+		"credit"
+	],
+	"blockedIps": [
+		"1.2.3.4"
+	],
+	"blockedIpUrl": "https://dummy.xyz/mail.txt",
+	"warningWordsUrl": "https://dummy.xyz/spam-words.txt"
+}

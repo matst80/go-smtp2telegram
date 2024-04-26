@@ -60,11 +60,27 @@ func TestUpdateBlackList(t *testing.T) {
 		blockedIps:   blockedIps,
 	}
 
-	err := s.UpdateBlockedIps("https://lists.blocklist.de/lists/mail.txt")
+	err := s.UpdateBlockedIpsFromUrl("https://lists.blocklist.de/lists/mail.txt")
 	if err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
 	if len(s.blockedIps) < 100 {
 		t.Errorf("Expected list to be updated with more than 100 ips, got %d", len(s.blockedIps))
+	}
+}
+
+func TestUpdateWarningWords(t *testing.T) {
+	s := spam{
+		spamWords:    spamWords,
+		warningWords: warningWords,
+		blockedIps:   blockedIps,
+	}
+
+	err := s.UpdateWarningWordsFromUrl("https://gist.githubusercontent.com/prasidhda/13c9303be3cbc4228585a7f1a06040a3/raw/b8905a4012146212f7c7af37e379f90980310642/common%2520spam%2520words%25202020")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+	if len(s.warningWords) < 100 {
+		t.Errorf("Expected list to be updated with more than 100 words, got %d", len(s.warningWords))
 	}
 }

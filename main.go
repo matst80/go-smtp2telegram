@@ -13,13 +13,6 @@ import (
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type Config struct {
-	Token  string `json:"token"`
-	Domain string `json:"domain"`
-	Listen string `json:"listen"`
-	Users  []user `json:"users"`
-}
-
 type user struct {
 	Email  string `json:"email"`
 	ChatId int64  `json:"chatId"`
@@ -165,9 +158,28 @@ func main() {
 		log.Panic(err)
 	}
 
+	spm := &spam{
+		spamWords:    config.StopWords,
+		warningWords: config.WarningWords,
+		blockedIps:   config.BlockedIps,
+	}
+	if config.BlockedIpUrl != "" {
+		err := spm.UpdateBlockedIpsFromUrl(config.BlockedIpUrl)
+		if err != nil {
+			log.Fatal("Error updating blocked ips", err)
+		}
+	}
+	if config.WarningWordsUrl != "" {
+		err := spm.UpdateWarningWordsFromUrl(config.WarningWordsUrl)
+		if err != nil {
+			log.Fatal("Error updating warning words", err)
+		}
+	}
+
 	s := smtp.NewServer(&backend{
 		bot:   bot,
 		users: config.Users,
+		spam:  spm,
 	})
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)

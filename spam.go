@@ -44,18 +44,35 @@ func (s *spam) AllowedAddress(clientIp string) error {
 	return nil
 }
 
-func (s *spam) UpdateBlockedIps(url string) error {
+func downloadLines(url string) ([]string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	//We Read the response body on the line below.
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	//Convert the body to type string
 	sb := string(body)
-	s.blockedIps = strings.Split(sb, "\n")
+	return strings.Split(sb, "\n"), nil
+}
+
+func (s *spam) UpdateBlockedIpsFromUrl(url string) error {
+	lines, err := downloadLines(url)
+	if err != nil {
+		return err
+	}
+	s.blockedIps = lines
+	return nil
+}
+
+func (s *spam) UpdateWarningWordsFromUrl(url string) error {
+	lines, err := downloadLines(url)
+	if err != nil {
+		return err
+	}
+	s.warningWords = lines
 	return nil
 }

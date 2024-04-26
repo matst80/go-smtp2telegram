@@ -7,6 +7,18 @@ import (
 	"os"
 )
 
+type Config struct {
+	Token           string   `json:"token"`
+	Domain          string   `json:"domain"`
+	Listen          string   `json:"listen"`
+	Users           []user   `json:"users"`
+	StopWords       []string `json:"stopWords"`
+	WarningWords    []string `json:"warningWords"`
+	BlockedIps      []string `json:"blockedIps"`
+	BlockedIpUrl    string   `json:"blockedIpUrl"`
+	WarningWordsUrl string   `json:"warningWordsUrl"`
+}
+
 func GetConfig() Config {
 	configFile, err := os.Open("config.json")
 	if err != nil {
