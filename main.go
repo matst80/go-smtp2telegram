@@ -197,7 +197,7 @@ func main() {
 	})
 	go WebServer(h)
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Printf("Bot authorized [%s]", bot.Self.UserName)
 
 	s.Addr = config.Listen
 	s.Domain = config.Domain
@@ -205,6 +205,7 @@ func main() {
 
 	if os.Getenv("DEBUG") == "true" {
 		bot.Debug = true
+		spm.Debug = true
 		s.Debug = os.Stdout
 	}
 
