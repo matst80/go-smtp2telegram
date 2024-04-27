@@ -64,6 +64,8 @@ Remember to keep sensitive information, such as passwords or API keys, secure an
 * `warningWordsUrl` Url to download spam wordlist separated by \n
 * `blockedIpUrl` Url to fetch updated spam classed ip numbers separated by \n
 
+Webserver that is used has basic hash so you can still share emails but at least have some security, strict content policy for everything except images and media
+
 ## Telegram commands
 
 ## `/start` 
