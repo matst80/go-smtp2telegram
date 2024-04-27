@@ -78,11 +78,10 @@ type hash struct {
 	salt string
 }
 
-var m = md5.New()
-
 func (h *hash) createSimpleHash(key string) string {
-
-	return fmt.Sprintf("%x", m.Sum([]byte(fmt.Sprintf("%s%s", key, h.salt))))
+	md5 := md5.New()
+	md5.Write([]byte(fmt.Sprintf("%s%s", key, h.salt)))
+	return fmt.Sprintf("%x", md5.Sum(nil))
 }
 
 func WebServer(h *hash) {

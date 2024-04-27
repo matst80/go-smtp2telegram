@@ -11,7 +11,14 @@ import (
 )
 
 func getIpFromAddr(addr net.Addr) string {
-	return strings.Split(addr.String(), ":")[0]
+	var clientIp string
+	s := addr.String()
+	if strings.ContainsRune(s, ':') {
+		clientIp, _, _ = net.SplitHostPort(s)
+	} else {
+		clientIp = s
+	}
+	return clientIp
 }
 
 func getValidEmailAddresses(input string) []string {
@@ -28,7 +35,6 @@ func getValidEmailAddresses(input string) []string {
 var m1 = regexp.MustCompile(`[^\w\-.]`)
 
 func fileSaveName(emailFileName string) string {
-	// replace all non filesafe characters with regex
 	emailFileName = m1.ReplaceAllString(strings.ReplaceAll(emailFileName, " ", "-"), "")
 	return strings.ToLower(emailFileName)
 }
