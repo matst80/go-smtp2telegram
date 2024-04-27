@@ -27,6 +27,13 @@ func TestExampleConfigRead(t *testing.T) {
 	}
 }
 
+func TestConfigParseError(t *testing.T) {
+	_, err := parseConfig([]byte(`{"kalle": "anka"}`))
+	if err != nil {
+		t.Errorf("Expected to still be able to parse default config, got %v", err)
+	}
+}
+
 func TestConfigDefaults(t *testing.T) {
 	config, err := parseConfig([]byte(`{}`))
 	if err != nil {

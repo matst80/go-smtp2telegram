@@ -36,12 +36,11 @@ func (s *Spam) IsSpamContent(text string) bool {
 	numberOfWords := len(strings.Fields(text))
 	var warningCount = 0
 	for _, word := range s.WarningWords {
-		if strings.Contains(text, word) {
-			if s.Debug {
-				log.Println("Warning word found: ", word)
-			}
-			warningCount++
+		f := strings.Count(text, word)
+		if (f > 0) && s.Debug {
+			log.Println("Warning found %s %d times", f, word)
 		}
+		warningCount += f
 	}
 	return warningCount > numberOfWords/6 // 16.6%
 }
