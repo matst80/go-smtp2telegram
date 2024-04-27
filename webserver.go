@@ -32,6 +32,7 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
+	w.Header().Add("Content-Security-Policy", "default-src 'self'; img-src *; media-src *")
 	w.Write(data)
 }
 
