@@ -18,7 +18,7 @@ type Spam struct {
 
 func (s *Spam) IsSpamHtml(html string) bool {
 	if html == "" {
-		return true
+		return false
 	}
 	for _, word := range s.SpamWords {
 		if strings.Contains(html, word) {
