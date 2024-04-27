@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"os"
 )
 
@@ -13,10 +13,9 @@ type Config struct {
 	Listen          string   `json:"listen"`
 	Users           []User   `json:"users"`
 	StopWords       []string `json:"stopWords"`
-	WarningWords    []string `json:"warningWords"`
-	BlockedIps      []string `json:"blockedIps"`
 	BlockedIpUrl    string   `json:"blockedIpUrl"`
 	WarningWordsUrl string   `json:"warningWordsUrl"`
+	BaseUrl         string   `json:"baseUrl"`
 }
 
 type User struct {
@@ -24,19 +23,32 @@ type User struct {
 	ChatId int64  `json:"chatId"`
 }
 
-func GetConfig() Config {
-	configFile, err := os.Open("config.json")
+func readFile(file string) ([]byte, error) {
+	configFile, err := os.Open(file)
 	if err != nil {
-		log.Fatal("Error opening config.json")
+		return nil, err
 	}
 	defer configFile.Close()
-	bytes, err := io.ReadAll(configFile)
-	if err != nil {
-		log.Fatal("Error reading config.json")
+	return io.ReadAll(configFile)
+}
+
+func parseConfig(bytes []byte) (Config, error) {
+	config := Config{
+		Users:     []User{},
+		StopWords: []string{},
+		Listen:    "0.0.0.0:25",
+		BaseUrl:   "http://localhost:8080",
 	}
-	var config Config
 	if err := json.Unmarshal([]byte(bytes), &config); err != nil {
-		log.Fatal("Error parsing config.json: ", err)
+		return Config{}, fmt.Errorf("error parsing config: %w", err)
 	}
-	return config
+	return config, nil
+}
+
+func GetConfig(file string) (Config, error) {
+	bytes, err := readFile(file)
+	if err != nil {
+		return Config{}, fmt.Errorf("error reading %s: %w", file, err)
+	}
+	return parseConfig(bytes)
 }
