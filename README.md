@@ -52,9 +52,10 @@ The config.json file is used to store configuration settings for your project. I
 
 Remember to keep sensitive information, such as passwords or API keys, secure and avoid committing them to version control systems.
 
-* `listen` address for smtp server
+* `listen` address for smtp server default `0.0.0.0:25` 
 * `domain` domain/hostname that the smtp server responds with
 * `token` telegram bot token [instructions](https://core.telegram.org/bots/tutorial)
+* `hashSalt` A string salt for basic user integrity (by no means safe) defaults to `salty-change-me`
 * `baseUrl` webserver public address. f.ex. http://mail.domain.com
 * `users` list of email and chatId objects, others will be discarded
 * `stopWords` A list of blocking words that will be used for basic spam protection. 
