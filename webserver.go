@@ -28,7 +28,7 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 	fn := strings.Replace(parts[l-1], ".html", "", -1)
 	hash := r.URL.Query().Get("hash")
 	if hash != h.createSimpleHash(chatId+fn) {
-		send404(w)
+		send401(w)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
@@ -36,16 +36,28 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func send404(w http.ResponseWriter) {
+
 	data, err := readFile("404.html")
 	if err != nil {
 		log.Printf("Error reading 404.html: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write(data)
+}
 
+func send401(w http.ResponseWriter) {
+	data, err := readFile("401.html")
+	if err != nil {
+		log.Printf("Error reading 401.html: %v", err)
+		http.Error(w, "Permissing denied", http.StatusUnauthorized)
+		return
+	}
+	w.WriteHeader(http.StatusUnauthorized)
+	w.Header().Set("Content-Type", "text/html")
+	w.Write(data)
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
