@@ -14,11 +14,10 @@ import (
 )
 
 type backend struct {
-	hash    *hash
-	bot     *botapi.BotAPI
-	baseUrl string
-	spam    *Spam
-	users   []User
+	hash   *hash
+	bot    *botapi.BotAPI
+	config *Config
+	spam   *Spam
 }
 
 type session struct {
@@ -58,7 +57,7 @@ func (s *session) Mail(from string, opts *smtp.MailOptions) error {
 }
 
 func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
-	for _, u := range s.backend.users {
+	for _, u := range s.backend.config.Users {
 		if to == u.Email {
 			s.to = append(s.to, u.ChatId)
 		}
@@ -123,7 +122,7 @@ func textContent(s *session, chatId int64) string {
 	extra := ""
 	if s.mailId != "" && s.email.HTML != "" {
 		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", chatId, s.mailId))
-		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.baseUrl, chatId, s.mailId, hashQuery)
+		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, chatId, s.mailId, hashQuery)
 	}
 
 	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
@@ -191,11 +190,10 @@ func main() {
 	}
 
 	s := smtp.NewServer(&backend{
-		hash:    h,
-		bot:     bot,
-		baseUrl: config.BaseUrl,
-		users:   config.Users,
-		spam:    spm,
+		hash:   h,
+		bot:    bot,
+		config: &config,
+		spam:   spm,
 	})
 	go WebServer(h)
 
