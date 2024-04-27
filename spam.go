@@ -22,6 +22,7 @@ func (s *Spam) IsSpamHtml(html string) bool {
 	}
 	for _, word := range s.SpamWords {
 		if strings.Contains(html, word) {
+			log.Println("Spam word found: ", word)
 			return true
 		}
 	}
@@ -33,6 +34,7 @@ func (s *Spam) IsSpamContent(text string) bool {
 	var warningCount = 0
 	for _, word := range s.WarningWords {
 		if strings.Contains(text, word) {
+			log.Println("Warning word found: ", word)
 			warningCount++
 		}
 	}

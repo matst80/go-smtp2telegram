@@ -81,12 +81,21 @@ func TestUpdateWarningWords(t *testing.T) {
 		BlockedIps:   blockedIps,
 	}
 
-	err := s.UpdateWarningWordsFromUrl("https://gist.githubusercontent.com/prasidhda/13c9303be3cbc4228585a7f1a06040a3/raw/b8905a4012146212f7c7af37e379f90980310642/common%2520spam%2520words%25202020")
+	err := s.UpdateWarningWordsFromUrl("https://raw.githubusercontent.com/matst80/go-smtp2telegram/main/data/warning-words.txt")
 	if err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
 	if len(s.WarningWords) < 100 {
 		t.Errorf("Expected list to be updated with more than 100 words, got %d", len(s.WarningWords))
+	}
+	isSpam := s.IsSpamContent(`To: slask@knatofs.se
+Cc: 
+Bcc: 
+Date: Sat, 27 Apr 2024 15:33:14 +0200
+Subject: Hej
+Detta ska fungera bättre`)
+	if isSpam {
+		t.Errorf("Expected to not be spam")
 	}
 }
 
@@ -98,18 +107,13 @@ func TestSpamIdLogging(t *testing.T) {
 		BlockedIps:   []string{},
 		MaxSpamCount: 3,
 	}
-	spm.LogSpamIp(ip)
-	if err := spm.AllowedAddress(ip); err != nil {
-		t.Errorf("Expected ip to accepted")
+	for i := 0; i < 3; i++ {
+		spm.LogSpamIp(ip)
+		if err := spm.AllowedAddress(ip); err != nil {
+			t.Errorf("Expected ip to accepted")
+		}
 	}
-	spm.LogSpamIp(ip)
-	if err := spm.AllowedAddress(ip); err != nil {
-		t.Errorf("Expected ip to accepted")
-	}
-	spm.LogSpamIp(ip)
-	if err := spm.AllowedAddress(ip); err != nil {
-		t.Errorf("Expected ip to accepted")
-	}
+
 	spm.LogSpamIp(ip)
 	if err := spm.AllowedAddress(ip); err == nil {
 		t.Errorf("Expected ip to blocked")
