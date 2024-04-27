@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"net"
+	"regexp"
 	"strings"
+	"time"
+
+	"github.com/mnako/letters"
 )
 
 func getIpFromAddr(addr net.Addr) string {
@@ -18,4 +23,24 @@ func getValidEmailAddresses(input string) []string {
 		}
 	}
 	return validEmails
+}
+
+var m1 = regexp.MustCompile(`[^\w\-.]`)
+
+func fileSaveName(emailFileName string) string {
+	// replace all non filesafe characters with regex
+	emailFileName = m1.ReplaceAllString(strings.ReplaceAll(emailFileName, " ", "-"), "")
+	return strings.ToLower(emailFileName)
+}
+
+func getEmailFileName(headers letters.Headers) string {
+	if headers.MessageID != "" {
+		return fileSaveName(string(headers.MessageID))
+	}
+	if headers.Subject != "" {
+		return fileSaveName(headers.Subject)
+	}
+	// generate unique id
+	id := time.Now().UnixNano()
+	return fileSaveName(fmt.Sprint(id))
 }

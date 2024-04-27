@@ -14,9 +14,10 @@ import (
 )
 
 type backend struct {
-	bot   *botapi.BotAPI
-	spam  *Spam
-	users []User
+	bot     *botapi.BotAPI
+	baseUrl string
+	spam    *Spam
+	users   []User
 }
 
 type session struct {
@@ -25,6 +26,7 @@ type session struct {
 	from    string
 	to      []int64
 	email   letters.Email
+	mailId  string
 }
 
 func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
@@ -64,13 +66,13 @@ func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	return nil
 }
 
-func saveHtml(userId int64, email letters.Email) error {
+func saveHtml(emailId string, userId int64, email letters.Email) error {
 	// Save email to a file
 	err := os.MkdirAll(fmt.Sprintf("mail/%d", userId), 0755)
 	if err != nil {
 		return err
 	}
-	file, err := os.Create(fmt.Sprintf("mail/%d/%s.html", userId, email.Headers.MessageID))
+	file, err := os.Create(fmt.Sprintf("mail/%d/%s.html", userId, emailId))
 	if err != nil {
 		return err
 	}
@@ -81,7 +83,7 @@ func saveHtml(userId int64, email letters.Email) error {
 		return err
 	}
 	for i, attachment := range email.AttachedFiles {
-		file, err := os.Create(fmt.Sprintf("mail/%d/%s-%d", userId, email.Headers.MessageID, i))
+		file, err := os.Create(fmt.Sprintf("mail/%d/%s-%d", userId, emailId, i))
 		if err != nil {
 			return err
 		}
@@ -102,8 +104,13 @@ func (s *session) Data(r io.Reader) error {
 			return err
 		}
 		s.email = email
-		for _, userId := range s.to {
-			go saveHtml(userId, s.email)
+		if email.HTML != "" {
+			mailId := getEmailFileName(email.Headers)
+
+			s.mailId = mailId
+			for _, userId := range s.to {
+				go saveHtml(mailId, userId, s.email)
+			}
 		}
 	}
 	return nil
@@ -111,8 +118,13 @@ func (s *session) Data(r io.Reader) error {
 
 func (s *session) Reset() {}
 
-func textContent(s *session) string {
-	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s", s.from, s.email.Headers.Subject, s.email.Text)
+func textContent(s *session, chatId int64) string {
+	extra := ""
+	if s.mailId != "" {
+		extra = fmt.Sprintf("<a href='%s/mail/%d/%s.html'>View html email</a>", s.backend.baseUrl, chatId, s.mailId)
+	}
+
+	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s\n\n%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
 }
 
 func (s *session) Logout() error {
@@ -125,7 +137,7 @@ func (s *session) Logout() error {
 	}
 	for _, chatId := range s.to {
 
-		content := textContent(s)
+		content := textContent(s, chatId)
 
 		msg := botapi.NewMessage(chatId, content)
 
@@ -172,10 +184,12 @@ func main() {
 	}
 
 	s := smtp.NewServer(&backend{
-		bot:   bot,
-		users: config.Users,
-		spam:  spm,
+		bot:     bot,
+		baseUrl: config.BaseUrl,
+		users:   config.Users,
+		spam:    spm,
 	})
+	go WebServer()
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 

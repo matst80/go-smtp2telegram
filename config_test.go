@@ -16,6 +16,9 @@ func TestExampleConfigRead(t *testing.T) {
 	if config.Token == "" {
 		t.Errorf("Expected config to include token")
 	}
+	if config.BaseUrl == "" {
+		t.Errorf("Expected config to include a baseUrl")
+	}
 	if config.Domain == "" {
 		t.Errorf("Expected config to include domain")
 	}

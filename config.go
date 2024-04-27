@@ -15,6 +15,7 @@ type Config struct {
 	StopWords       []string `json:"stopWords"`
 	BlockedIpUrl    string   `json:"blockedIpUrl"`
 	WarningWordsUrl string   `json:"warningWordsUrl"`
+	BaseUrl         string   `json:"baseUrl"`
 }
 
 type User struct {
@@ -36,6 +37,7 @@ func parseConfig(bytes []byte) (Config, error) {
 		Users:     []User{},
 		StopWords: []string{},
 		Listen:    "0.0.0.0:25",
+		BaseUrl:   "http://localhost:8080",
 	}
 	if err := json.Unmarshal([]byte(bytes), &config); err != nil {
 		return Config{}, fmt.Errorf("error parsing config: %w", err)

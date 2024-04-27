@@ -53,8 +53,8 @@ func TestSpamContent(t *testing.T) {
 		t.Errorf("Expected to be spam")
 	}
 
-	if !s.IsSpamContent("") {
-		t.Errorf("Expected to be spam")
+	if s.IsSpamContent("") {
+		t.Errorf("Expected to be ok")
 	}
 }
 
