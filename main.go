@@ -131,8 +131,9 @@ func (s *session) Logout() error {
 	hasSent := false
 	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
 	if isSpam {
-		s.backend.spam.LogSpamIp(getIpFromAddr(s.client))
-		log.Printf("Discarding email, spam detected %s %s", s.from, s.client)
+		ip := getIpFromAddr(s.client)
+		s.backend.spam.LogSpamIp(ip)
+		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
 	}
 	for _, chatId := range s.to {
