@@ -1,3 +1,4 @@
 config.json
 crapmail.*
 mail/
+__debug*

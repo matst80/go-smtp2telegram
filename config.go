@@ -16,6 +16,7 @@ type Config struct {
 	BlockedIpUrl    string   `json:"blockedIpUrl"`
 	WarningWordsUrl string   `json:"warningWordsUrl"`
 	BaseUrl         string   `json:"baseUrl"`
+	HashSalt        string   `json:"hashSalt"`
 }
 
 type User struct {
@@ -37,6 +38,7 @@ func parseConfig(bytes []byte) (Config, error) {
 		Users:     []User{},
 		StopWords: []string{},
 		Listen:    "0.0.0.0:25",
+		HashSalt:  "salty-change-me",
 		BaseUrl:   "http://localhost:8080",
 	}
 	if err := json.Unmarshal([]byte(bytes), &config); err != nil {

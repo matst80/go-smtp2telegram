@@ -28,6 +28,7 @@
 	"blockedIps": [
 		"1.2.3.4"
 	],
+	"hashSalt": "salty-change-me",
 	"warningWordsUrl": "https://raw.githubusercontent.com/matst80/go-smtp2telegram/main/data/warning-words.txt",
 	"blockedIpUrl": "https://lists.blocklist.de/lists/mail.txt"
 }
