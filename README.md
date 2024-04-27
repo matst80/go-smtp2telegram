@@ -4,6 +4,8 @@
 
 The go-smtp2telegram application is a tool that allows you to forward SMTP emails to Telegram. It provides a convenient way to receive email notifications directly on your Telegram account. It includes a webserver to be able to view html mails that is to complex for telegram and some basic spam protection
 
+Stores html mail in `./mail/[chatId]` folder, then sends a link to it to the user.
+
 Quick hack to learn go, use with caution 😊
 
 ## Installation / usage
@@ -43,7 +45,7 @@ Build the application or use [matst80/go-mail2telegram](https://hub.docker.com/r
 
 ```bash
 docker build -t mail2telegram .
-docker run -v ./config.json:/config.json -p 25:25 -p 8080:8080 mail2telegram
+docker run -v ./mail:/mail -v ./config.json:/config.json -p 25:25 -p 8080:8080 mail2telegram
 ```
 
 ## Configuration

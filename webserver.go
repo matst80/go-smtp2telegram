@@ -78,10 +78,11 @@ type hash struct {
 	salt string
 }
 
+var m = md5.New()
+
 func (h *hash) createSimpleHash(key string) string {
-	md5 := md5.New()
-	md5.Write([]byte(fmt.Sprintf("%s%s", key, h.salt)))
-	return fmt.Sprintf("%x", md5.Sum(nil))
+
+	return fmt.Sprintf("%x", m.Sum([]byte(fmt.Sprintf("%s%s", key, h.salt))))
 }
 
 func WebServer(h *hash) {
@@ -89,6 +90,7 @@ func WebServer(h *hash) {
 	http.HandleFunc("/", rootHandler)
 	http.HandleFunc("/mail/", h.mailHandler)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 

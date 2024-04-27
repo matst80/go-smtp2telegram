@@ -36,7 +36,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	err := bkd.spam.AllowedAddress(ip)
 	if err != nil {
 		log.Printf("Blocked address %s", client)
-		return nil, err
+		return nil, &smtp.SMTPError{Code: 550, Message: "Blocked address"}
 	}
 
 	return &session{
@@ -52,6 +52,9 @@ func (s *session) AuthPlain(username, password string) error {
 }
 
 func (s *session) Mail(from string, opts *smtp.MailOptions) error {
+	if from == "spameri@tiscali.it" {
+		return &smtp.SMTPError{Code: 550, Message: "Scanning not allowed"}
+	}
 	s.from = from
 	return nil
 }
@@ -60,10 +63,10 @@ func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	for _, u := range s.backend.config.Users {
 		if to == u.Email {
 			s.to = append(s.to, u.ChatId)
+			return nil
 		}
 	}
-
-	return nil
+	return &smtp.SMTPError{Code: 550, Message: "User not found"}
 }
 
 func saveHtml(emailId string, userId int64, email letters.Email) error {
@@ -192,7 +195,7 @@ func main() {
 	s := smtp.NewServer(&backend{
 		hash:   h,
 		bot:    bot,
-		config: &config,
+		config: config,
 		spam:   spm,
 	})
 	go WebServer(h)
@@ -211,7 +214,7 @@ func main() {
 
 	go ListenForMessages(bot, &commandHandler{
 		spam:   spm,
-		config: &config,
+		config: config,
 		bot:    bot,
 	})
 
