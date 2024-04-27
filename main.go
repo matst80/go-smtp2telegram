@@ -121,10 +121,10 @@ func (s *session) Reset() {}
 func textContent(s *session, chatId int64) string {
 	extra := ""
 	if s.mailId != "" {
-		extra = fmt.Sprintf("%s/mail/%d/%s.html", s.backend.baseUrl, chatId, s.mailId)
+		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html", s.backend.baseUrl, chatId, s.mailId)
 	}
 
-	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s\n\n%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
+	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
 }
 
 func (s *session) Logout() error {
