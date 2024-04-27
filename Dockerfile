@@ -14,5 +14,6 @@ WORKDIR /
 EXPOSE 25
 EXPOSE 8080
 
+COPY *.html /
 COPY --from=build-stage /go-crapmail /go-crapmail
 ENTRYPOINT ["/go-crapmail"]
