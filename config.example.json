@@ -15,14 +15,7 @@
 		"<script"
 	],
 	"warningWords": [
-		"dejt",
-		"dating",
 		"$$$",
-		"cash",
-		"money",
-		"hacked",
-		"password",
-		"dick",
 		"earn",
 		"discount",
 		"prince",
@@ -35,6 +28,6 @@
 	"blockedIps": [
 		"1.2.3.4"
 	],
-	"blockedIpUrl": "https://dummy.xyz/mail.txt",
-	"warningWordsUrl": "https://dummy.xyz/spam-words.txt"
+	"warningWordsUrl": "https://raw.githubusercontent.com/matst80/go-smtp2telegram/main/data/warning-words.txt",
+	"blockedIpUrl": "https://lists.blocklist.de/lists/mail.txt"
 }
