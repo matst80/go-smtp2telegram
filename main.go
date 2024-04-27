@@ -121,7 +121,7 @@ func (s *session) Reset() {}
 func textContent(s *session, chatId int64) string {
 	extra := ""
 	if s.mailId != "" {
-		extra = fmt.Sprintf("<a href='%s/mail/%d/%s.html'>View html email</a>", s.backend.baseUrl, chatId, s.mailId)
+		extra = fmt.Sprintf("%s/mail/%d/%s.html", s.backend.baseUrl, chatId, s.mailId)
 	}
 
 	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s\n\n%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
