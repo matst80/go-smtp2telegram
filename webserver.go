@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -24,13 +23,11 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 		send404(w)
 	}
 	parts := strings.Split(r.URL.Path, "/")
-	chatId, parseError := strconv.ParseInt(parts[len(parts)-2], 10, 64)
-	if parseError != nil {
-		send404(w)
-		return
-	}
+	l := len(parts)
+	chatId := parts[l-2]
+	fn := strings.Replace(parts[l-1], ".html", "", -1)
 	hash := r.URL.Query().Get("hash")
-	if hash != h.createSimpleHash(chatId) {
+	if hash != h.createSimpleHash(chatId+fn) {
 		send404(w)
 		return
 	}
@@ -68,9 +65,9 @@ type hash struct {
 	salt string
 }
 
-func (h *hash) createSimpleHash(key int64) string {
+func (h *hash) createSimpleHash(key string) string {
 	md5 := md5.New()
-	md5.Write([]byte(fmt.Sprintf("%d%s", key, h.salt)))
+	md5.Write([]byte(fmt.Sprintf("%s%s", key, h.salt)))
 	return fmt.Sprintf("%x", md5.Sum(nil))
 }
 

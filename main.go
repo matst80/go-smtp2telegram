@@ -122,7 +122,8 @@ func (s *session) Reset() {}
 func textContent(s *session, chatId int64) string {
 	extra := ""
 	if s.mailId != "" {
-		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.baseUrl, chatId, s.mailId, s.backend.hash.createSimpleHash(chatId))
+		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", chatId, s.mailId))
+		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.baseUrl, chatId, s.mailId, hashQuery)
 	}
 
 	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
