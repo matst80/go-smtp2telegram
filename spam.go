@@ -13,15 +13,19 @@ type Spam struct {
 	WarningWords []string
 	BlockedIps   []string
 	MaxSpamCount int
+	Debug        bool
 	spamIps      map[string]int
 }
 
 func (s *Spam) IsSpamHtml(html string) bool {
 	if html == "" {
-		return true
+		return false
 	}
 	for _, word := range s.SpamWords {
 		if strings.Contains(html, word) {
+			if s.Debug {
+				log.Println("Spam word found: ", word)
+			}
 			return true
 		}
 	}
@@ -32,9 +36,11 @@ func (s *Spam) IsSpamContent(text string) bool {
 	numberOfWords := len(strings.Fields(text))
 	var warningCount = 0
 	for _, word := range s.WarningWords {
-		if strings.Contains(text, word) {
-			warningCount++
+		f := strings.Count(text, word)
+		if (f > 0) && s.Debug {
+			log.Println("Warning found %s %d times", f, word)
 		}
+		warningCount += f
 	}
 	return warningCount > numberOfWords/6 // 16.6%
 }

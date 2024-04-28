@@ -14,10 +14,10 @@ import (
 )
 
 type backend struct {
-	bot     *botapi.BotAPI
-	baseUrl string
-	spam    *Spam
-	users   []User
+	hash   *hash
+	bot    *botapi.BotAPI
+	config *Config
+	spam   *Spam
 }
 
 type session struct {
@@ -36,7 +36,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	err := bkd.spam.AllowedAddress(ip)
 	if err != nil {
 		log.Printf("Blocked address %s", client)
-		return nil, err
+		return nil, &smtp.SMTPError{Code: 550, Message: "Blocked address"}
 	}
 
 	return &session{
@@ -52,18 +52,21 @@ func (s *session) AuthPlain(username, password string) error {
 }
 
 func (s *session) Mail(from string, opts *smtp.MailOptions) error {
+	if from == "spameri@tiscali.it" {
+		return &smtp.SMTPError{Code: 550, Message: "Scanning not allowed"}
+	}
 	s.from = from
 	return nil
 }
 
 func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
-	for _, u := range s.backend.users {
+	for _, u := range s.backend.config.Users {
 		if to == u.Email {
 			s.to = append(s.to, u.ChatId)
+			return nil
 		}
 	}
-
-	return nil
+	return &smtp.SMTPError{Code: 550, Message: "User not found"}
 }
 
 func saveHtml(emailId string, userId int64, email letters.Email) error {
@@ -120,8 +123,9 @@ func (s *session) Reset() {}
 
 func textContent(s *session, chatId int64) string {
 	extra := ""
-	if s.mailId != "" {
-		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html", s.backend.baseUrl, chatId, s.mailId)
+	if s.mailId != "" && s.email.HTML != "" {
+		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", chatId, s.mailId))
+		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, chatId, s.mailId, hashQuery)
 	}
 
 	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
@@ -131,8 +135,9 @@ func (s *session) Logout() error {
 	hasSent := false
 	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
 	if isSpam {
-		s.backend.spam.LogSpamIp(getIpFromAddr(s.client))
-		log.Printf("Discarding email, spam detected %s %s", s.from, s.client)
+		ip := getIpFromAddr(s.client)
+		s.backend.spam.LogSpamIp(ip)
+		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
 	}
 	for _, chatId := range s.to {
@@ -164,6 +169,10 @@ func main() {
 		log.Panic(err)
 	}
 
+	h := &hash{
+		salt: config.HashSalt,
+	}
+
 	spm := &Spam{
 		SpamWords:    config.StopWords,
 		WarningWords: []string{},
@@ -184,14 +193,14 @@ func main() {
 	}
 
 	s := smtp.NewServer(&backend{
-		bot:     bot,
-		baseUrl: config.BaseUrl,
-		users:   config.Users,
-		spam:    spm,
+		hash:   h,
+		bot:    bot,
+		config: config,
+		spam:   spm,
 	})
-	go WebServer()
+	go WebServer(h)
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Printf("Bot authorized [%s]", bot.Self.UserName)
 
 	s.Addr = config.Listen
 	s.Domain = config.Domain
@@ -199,12 +208,13 @@ func main() {
 
 	if os.Getenv("DEBUG") == "true" {
 		bot.Debug = true
+		spm.Debug = true
 		s.Debug = os.Stdout
 	}
 
 	go ListenForMessages(bot, &commandHandler{
 		spam:   spm,
-		config: &config,
+		config: config,
 		bot:    bot,
 	})
 

@@ -16,6 +16,7 @@ type Config struct {
 	BlockedIpUrl    string   `json:"blockedIpUrl"`
 	WarningWordsUrl string   `json:"warningWordsUrl"`
 	BaseUrl         string   `json:"baseUrl"`
+	HashSalt        string   `json:"hashSalt"`
 }
 
 type User struct {
@@ -32,23 +33,24 @@ func readFile(file string) ([]byte, error) {
 	return io.ReadAll(configFile)
 }
 
-func parseConfig(bytes []byte) (Config, error) {
-	config := Config{
+func parseConfig(bytes []byte) (*Config, error) {
+	config := &Config{
 		Users:     []User{},
 		StopWords: []string{},
 		Listen:    "0.0.0.0:25",
+		HashSalt:  "salty-change-me",
 		BaseUrl:   "http://localhost:8080",
 	}
-	if err := json.Unmarshal([]byte(bytes), &config); err != nil {
-		return Config{}, fmt.Errorf("error parsing config: %w", err)
+	if err := json.Unmarshal([]byte(bytes), config); err != nil {
+		return &Config{}, fmt.Errorf("error parsing config: %w", err)
 	}
 	return config, nil
 }
 
-func GetConfig(file string) (Config, error) {
+func GetConfig(file string) (*Config, error) {
 	bytes, err := readFile(file)
 	if err != nil {
-		return Config{}, fmt.Errorf("error reading %s: %w", file, err)
+		return &Config{}, fmt.Errorf("error reading %s: %w", file, err)
 	}
 	return parseConfig(bytes)
 }
