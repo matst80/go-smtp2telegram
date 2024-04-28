@@ -14,8 +14,10 @@ import (
 )
 
 type backend struct {
-	hash   *hash
-	bot    *botapi.BotAPI
+	hash         *hash
+	bot          *botapi.BotAPI
+	aiClassifier *aiClassifier
+	//openai *openai.Client
 	config *Config
 	spam   *Spam
 }
@@ -126,18 +128,21 @@ func (s *session) Data(r io.Reader) error {
 
 func (s *session) Reset() {}
 
-func textContent(s *session, chatId int64) string {
+func textContent(s *session, chatId int64, c *classificationResult) string {
 	extra := ""
 	if s.mailId != "" && s.email.HTML != "" {
 		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", chatId, s.mailId))
 		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, chatId, s.mailId, hashQuery)
+	}
+	if c.SpamRating > 0 {
+		extra = fmt.Sprintf("%s\n\nSpam rating: %.2f\nSummary: %s", extra, c.SpamRating, c.Summary)
 	}
 
 	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
 }
 
 func (s *session) Logout() error {
-	hasSent := false
+
 	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
 	if isSpam {
 		ip := getIpFromAddr(s.client)
@@ -145,21 +150,31 @@ func (s *session) Logout() error {
 		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
 	}
-	for _, chatId := range s.to {
+	if len(s.to) > 0 {
+		result := &classificationResult{
+			SpamRating: -1,
+			Summary:    "",
+		}
+		if s.email.HTML != "" && s.backend.aiClassifier != nil && len(s.email.HTML) < 1024*10 {
+			if err := s.backend.aiClassifier.classify(s.email.HTML, result); err != nil {
+				log.Printf("Error classifying email: %v", err)
+			}
+		}
+		for _, chatId := range s.to {
 
-		content := textContent(s, chatId)
+			content := textContent(s, chatId, result)
 
-		msg := botapi.NewMessage(chatId, content)
+			msg := botapi.NewMessage(chatId, content)
 
-		s.backend.bot.Send(msg)
-		log.Printf("Sent email to %d", chatId)
+			s.backend.bot.Send(msg)
+			log.Printf("Sent email to %d", chatId)
 
-		hasSent = true
+		}
+	} else {
 
-	}
-	if !hasSent {
 		log.Printf("Discarding email, no recipient, from: %s (%s)", s.from, s.client)
 	}
+
 	return nil
 }
 
@@ -198,10 +213,11 @@ func main() {
 	}
 
 	s := smtp.NewServer(&backend{
-		hash:   h,
-		bot:    bot,
-		config: config,
-		spam:   spm,
+		aiClassifier: newAiClassifier(&config.OpenAi),
+		hash:         h,
+		bot:          bot,
+		config:       config,
+		spam:         spm,
 	})
 	go WebServer(h)
 

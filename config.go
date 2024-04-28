@@ -11,6 +11,7 @@ type Config struct {
 	Token             string              `json:"token"`
 	Domain            string              `json:"domain"`
 	Listen            string              `json:"listen"`
+	OpenAi            AiClassification    `json:"openai"`
 	CustomFromMessage []CustomFromMessage `json:"customRcptMessage"`
 	Users             []User              `json:"users"`
 	StopWords         []string            `json:"stopWords"`
@@ -18,6 +19,12 @@ type Config struct {
 	WarningWordsUrl   string              `json:"warningWordsUrl"`
 	BaseUrl           string              `json:"baseUrl"`
 	HashSalt          string              `json:"hashSalt"`
+}
+
+type AiClassification struct {
+	ApiKey string `json:"apiKey"`
+	Url    string `json:"url"`
+	Model  string `json:"model"`
 }
 
 type CustomFromMessage struct {

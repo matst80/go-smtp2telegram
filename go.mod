@@ -10,6 +10,7 @@ require (
 
 require (
 	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
+	github.com/sashabaranov/go-openai v1.23.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
