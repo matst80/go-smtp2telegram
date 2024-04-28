@@ -18,6 +18,12 @@ type classificationResult struct {
 	Summary    string  `json:"summary"`
 }
 
+func removeMarkdown(text string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(text, "```json", ""), "```", "")
+}
+
+const SystemPrompt = "You are a mail analyzer, summarize and classify content and respond in json format with the keys spamRating (0 to 10) and short summary of the content, include passwords and codes if found."
+
 func (a *aiClassifier) classify(text string, result *classificationResult) error {
 
 	if a.client == nil {
@@ -30,7 +36,7 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: "You are a mail analyzer, summarize and classify content and respond in json format with the keys spamRating (0 to 10) and short summary of the content, include passwords and codes if found.",
+					Content: SystemPrompt,
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -41,12 +47,13 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 	)
 
 	if err != nil {
-		//fmt.Printf("ChatCompletion error: %v\n", err)
 		return err
 	}
+	if resp.Choices == nil || len(resp.Choices) == 0 {
+		return fmt.Errorf("no choices in response")
+	}
 
-	c := strings.ReplaceAll(resp.Choices[0].Message.Content, "```json", "")
-	c = strings.ReplaceAll(c, "```", "")
+	c := removeMarkdown(resp.Choices[0].Message.Content)
 
 	err = json.Unmarshal([]byte(c), result)
 	if err != nil {
