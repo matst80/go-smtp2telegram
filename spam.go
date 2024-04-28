@@ -38,7 +38,7 @@ func (s *Spam) IsSpamContent(text string) bool {
 	for _, word := range s.WarningWords {
 		f := strings.Count(text, word)
 		if (f > 0) && s.Debug {
-			log.Println("Warning found %s %d times", f, word)
+			log.Printf("Warning found %s %d times", word, f)
 		}
 		warningCount += f
 	}
