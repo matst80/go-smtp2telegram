@@ -136,7 +136,7 @@ func (s *session) Reset() {}
 func textContent(s *session, r rcpt, c *classificationResult) string {
 	prefix := ""
 	if r.extraInfo {
-		prefix = fmt.Sprintf("\nTo: %s\nIp:%s", r.address, s.client)
+		prefix = fmt.Sprintf("\nTo: %s\nIp: %s", r.address, s.client)
 	}
 	suffix := ""
 	if s.mailId != "" && s.email.HTML != "" {
@@ -144,7 +144,7 @@ func textContent(s *session, r rcpt, c *classificationResult) string {
 		suffix = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
 	}
 	if c.SpamRating > -1.0 {
-		prefix = fmt.Sprintf("%s\n\nSpam rating: %.2f\nSummary: %s", prefix, c.SpamRating, c.Summary)
+		prefix = fmt.Sprintf("%s\nSpam rating: %.2f\nSummary: %s", prefix, c.SpamRating, c.Summary)
 	}
 
 	return fmt.Sprintf("From: %s\nSubject: %s%s\n\n%s%s", s.from, s.email.Headers.Subject, prefix, s.email.Text, suffix)

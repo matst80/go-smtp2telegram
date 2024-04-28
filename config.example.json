@@ -6,6 +6,7 @@
 	"users": [
 		{
 			"email": "user@domain.xyz",
+			"debugInfo": false,
 			"chatId": 123456789
 		}
 	],
