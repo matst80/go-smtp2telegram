@@ -52,8 +52,13 @@ func (s *session) AuthPlain(username, password string) error {
 }
 
 func (s *session) Mail(from string, opts *smtp.MailOptions) error {
-	if from == "spameri@tiscali.it" {
-		return &smtp.SMTPError{Code: 550, Message: "Scanning not allowed"}
+	if s.backend.config.CustomFromMessage != nil {
+		for _, i := range s.backend.config.CustomFromMessage {
+			if i.Email == from {
+				log.Printf("Custom message for %s: %s", from, i.Message)
+				return &smtp.SMTPError{Code: 550, Message: i.Message}
+			}
+		}
 	}
 	s.from = from
 	return nil
