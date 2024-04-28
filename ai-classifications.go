@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -29,7 +30,7 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: "You are a mail analyzer, summarize and classify content and respond in json format with only the keys spamRating (0 to 10) and short summary",
+					Content: "You are a mail analyzer, summarize and classify content and respond in json format with the keys spamRating (0 to 10) and short summary of the content, include passwords and codes if found.",
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -44,9 +45,12 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 		return err
 	}
 
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), result)
+	c := strings.ReplaceAll(resp.Choices[0].Message.Content, "```json", "")
+	c = strings.ReplaceAll(c, "```", "")
+
+	err = json.Unmarshal([]byte(c), result)
 	if err != nil {
-		fmt.Printf("Error reading result: %v\nInput: %s", err, resp.Choices[0].Message.Content)
+		fmt.Printf("Error reading result: %v\nInput: %s", err, c)
 		return err
 	}
 
