@@ -17,18 +17,23 @@ type backend struct {
 	hash         *hash
 	bot          *botapi.BotAPI
 	aiClassifier *aiClassifier
-	//openai *openai.Client
-	config *Config
-	spam   *Spam
+	config       *Config
+	spam         *Spam
 }
 
 type session struct {
 	client  net.Addr
 	backend *backend
 	from    string
-	to      []int64
+	to      []rcpt
 	email   letters.Email
 	mailId  string
+}
+
+type rcpt struct {
+	extraInfo bool
+	address   string
+	chatId    int64
 }
 
 func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
@@ -44,7 +49,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	return &session{
 		client:  client,
 		backend: bkd,
-		to:      []int64{},
+		to:      []rcpt{},
 		email:   letters.Email{},
 	}, nil
 }
@@ -69,7 +74,7 @@ func (s *session) Mail(from string, opts *smtp.MailOptions) error {
 func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	for _, u := range s.backend.config.Users {
 		if to == u.Email {
-			s.to = append(s.to, u.ChatId)
+			s.to = append(s.to, rcpt{chatId: u.ChatId, extraInfo: u.DebugInfo, address: to})
 			return nil
 		}
 	}
@@ -119,7 +124,7 @@ func (s *session) Data(r io.Reader) error {
 
 			s.mailId = mailId
 			for _, userId := range s.to {
-				go saveHtml(mailId, userId, s.email)
+				go saveHtml(mailId, userId.chatId, s.email)
 			}
 		}
 	}
@@ -128,24 +133,28 @@ func (s *session) Data(r io.Reader) error {
 
 func (s *session) Reset() {}
 
-func textContent(s *session, chatId int64, c *classificationResult) string {
-	extra := ""
+func textContent(s *session, r rcpt, c *classificationResult) string {
+	prefix := ""
+	if r.extraInfo {
+		prefix = fmt.Sprintf("\nTo: %s\nIp:%s", r.address, s.client)
+	}
+	suffix := ""
 	if s.mailId != "" && s.email.HTML != "" {
-		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", chatId, s.mailId))
-		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, chatId, s.mailId, hashQuery)
+		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", r.chatId, s.mailId))
+		suffix = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
 	}
 	if c.SpamRating > -1.0 {
-		extra = fmt.Sprintf("%s\n\nSpam rating: %.2f\nSummary: %s", extra, c.SpamRating, c.Summary)
+		prefix = fmt.Sprintf("%s\n\nSpam rating: %.2f\nSummary: %s", prefix, c.SpamRating, c.Summary)
 	}
 
-	return fmt.Sprintf("From: %s\nSubject: %s\n\n%s%s", s.from, s.email.Headers.Subject, s.email.Text, extra)
+	return fmt.Sprintf("From: %s\nSubject: %s%s\n\n%s%s", s.from, s.email.Headers.Subject, prefix, s.email.Text, suffix)
 }
 
 func (s *session) Logout() error {
 
 	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
+	ip := getIpFromAddr(s.client)
 	if isSpam {
-		ip := getIpFromAddr(s.client)
 		s.backend.spam.LogSpamIp(ip)
 		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
@@ -160,18 +169,18 @@ func (s *session) Logout() error {
 				log.Printf("Error classifying email: %v", err)
 			}
 		}
-		for _, chatId := range s.to {
+		for _, r := range s.to {
 
-			content := textContent(s, chatId, result)
+			content := textContent(s, r, result)
 
-			msg := botapi.NewMessage(chatId, content)
+			msg := botapi.NewMessage(r.chatId, content)
 
 			s.backend.bot.Send(msg)
-			log.Printf("Sent email to %d", chatId)
+			log.Printf("Sent email to %d", r.chatId)
 
 		}
 	} else {
-
+		s.backend.spam.LogSpamIp(ip)
 		log.Printf("Discarding email, no recipient, from: %s (%s)", s.from, s.client)
 	}
 
