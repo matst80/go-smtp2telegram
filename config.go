@@ -26,8 +26,9 @@ type CustomFromMessage struct {
 }
 
 type User struct {
-	Email  string `json:"email"`
-	ChatId int64  `json:"chatId"`
+	Email     string `json:"email"`
+	DebugInfo bool   `json:"debugInfo"`
+	ChatId    int64  `json:"chatId"`
 }
 
 func readFile(file string) ([]byte, error) {
