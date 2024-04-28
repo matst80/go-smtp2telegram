@@ -29,7 +29,7 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: "You are a mail analyzer, summarize and classify content and respond in json with the keys spamRating and summary",
+					Content: "You are a mail analyzer, summarize and classify content and respond in json format with only the keys spamRating (0 to 10) and short summary",
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -40,14 +40,13 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 	)
 
 	if err != nil {
-		fmt.Printf("ChatCompletion error: %v\n", err)
+		//fmt.Printf("ChatCompletion error: %v\n", err)
 		return err
 	}
 
-	fmt.Println(resp.Choices[0].Message.Content)
 	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), result)
 	if err != nil {
-		fmt.Printf("Error reading result: %v\n", err)
+		fmt.Printf("Error reading result: %v\nInput: %s", err, resp.Choices[0].Message.Content)
 		return err
 	}
 

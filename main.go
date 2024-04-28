@@ -150,7 +150,7 @@ func (s *session) Logout() error {
 		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
 	}
-	if len(s.to) > 0 {
+	if len(s.to) > 0.0 {
 		result := &classificationResult{
 			SpamRating: -1,
 			Summary:    "",
