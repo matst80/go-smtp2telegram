@@ -134,7 +134,7 @@ func textContent(s *session, chatId int64, c *classificationResult) string {
 		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", chatId, s.mailId))
 		extra = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, chatId, s.mailId, hashQuery)
 	}
-	if c.SpamRating > 0 {
+	if c.SpamRating > -1.0 {
 		extra = fmt.Sprintf("%s\n\nSpam rating: %.2f\nSummary: %s", extra, c.SpamRating, c.Summary)
 	}
 
@@ -150,7 +150,7 @@ func (s *session) Logout() error {
 		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
 	}
-	if len(s.to) > 0.0 {
+	if len(s.to) > 0 {
 		result := &classificationResult{
 			SpamRating: -1,
 			Summary:    "",
