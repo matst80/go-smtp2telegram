@@ -149,8 +149,8 @@ func textContent(s *session, r rcpt) string {
 func (s *session) Logout() error {
 	hasSent := false
 	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
+	ip := getIpFromAddr(s.client)
 	if isSpam {
-		ip := getIpFromAddr(s.client)
 		s.backend.spam.LogSpamIp(ip)
 		log.Printf("Spam detected (%s) [%s]", s.from, ip)
 		return nil
@@ -161,13 +161,17 @@ func (s *session) Logout() error {
 
 		msg := botapi.NewMessage(r.chatId, content)
 
-		s.backend.bot.Send(msg)
-		log.Printf("Sent email to %d", r.chatId)
-
+		_, err := s.backend.bot.Send(msg)
+		if err != nil {
+			log.Printf("Sent message to %d", r.chatId)
+		} else {
+			log.Printf("Could not send message to %d", r.chatId)
+		}
 		hasSent = true
 
 	}
 	if !hasSent {
+		s.backend.spam.LogSpamIp(ip)
 		log.Printf("Discarding email, no recipient, from: %s (%s)", s.from, s.client)
 	}
 	return nil
