@@ -8,15 +8,21 @@ import (
 )
 
 type Config struct {
-	Token           string   `json:"token"`
-	Domain          string   `json:"domain"`
-	Listen          string   `json:"listen"`
-	Users           []User   `json:"users"`
-	StopWords       []string `json:"stopWords"`
-	BlockedIpUrl    string   `json:"blockedIpUrl"`
-	WarningWordsUrl string   `json:"warningWordsUrl"`
-	BaseUrl         string   `json:"baseUrl"`
-	HashSalt        string   `json:"hashSalt"`
+	Token             string              `json:"token"`
+	Domain            string              `json:"domain"`
+	Listen            string              `json:"listen"`
+	CustomFromMessage []CustomFromMessage `json:"customRcptMessage"`
+	Users             []User              `json:"users"`
+	StopWords         []string            `json:"stopWords"`
+	BlockedIpUrl      string              `json:"blockedIpUrl"`
+	WarningWordsUrl   string              `json:"warningWordsUrl"`
+	BaseUrl           string              `json:"baseUrl"`
+	HashSalt          string              `json:"hashSalt"`
+}
+
+type CustomFromMessage struct {
+	Message string `json:"message"`
+	Email   string `json:"email"`
 }
 
 type User struct {
@@ -35,11 +41,12 @@ func readFile(file string) ([]byte, error) {
 
 func parseConfig(bytes []byte) (*Config, error) {
 	config := &Config{
-		Users:     []User{},
-		StopWords: []string{},
-		Listen:    "0.0.0.0:25",
-		HashSalt:  "salty-change-me",
-		BaseUrl:   "http://localhost:8080",
+		Users:             []User{},
+		StopWords:         []string{},
+		CustomFromMessage: []CustomFromMessage{},
+		Listen:            "0.0.0.0:25",
+		HashSalt:          "salty-change-me",
+		BaseUrl:           "http://localhost:8080",
 	}
 	if err := json.Unmarshal([]byte(bytes), config); err != nil {
 		return &Config{}, fmt.Errorf("error parsing config: %w", err)

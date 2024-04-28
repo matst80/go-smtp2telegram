@@ -31,7 +31,7 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 		send401(w)
 		return
 	}
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Add("Content-Security-Policy", "default-src 'self'; img-src *; media-src *")
 	w.Write(data)
 }
@@ -45,7 +45,7 @@ func send404(w http.ResponseWriter) {
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(data)
 }
 
@@ -57,7 +57,7 @@ func send401(w http.ResponseWriter) {
 		return
 	}
 	w.WriteHeader(http.StatusUnauthorized)
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(data)
 }
 
@@ -71,7 +71,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		send404(w)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(data)
+
 }
 
 type hash struct {
