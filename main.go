@@ -134,7 +134,7 @@ func (s *session) Data(r io.Reader) error {
 	tee := io.TeeReader(r, &buf)
 
 	valid := hasValidDkim(tee)
-	log.Println("Valid DKIM:", valid)
+	log.Printf("Valid DKIM: %v %s %s", valid, s.from, s.client)
 
 	if len(s.to) > 0 {
 		email, err := letters.ParseEmail(r)
