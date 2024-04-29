@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/mnako/letters"
 
@@ -114,7 +115,7 @@ func saveHtml(emailId string, userId int64, email letters.Email) error {
 	return nil
 }
 
-func hasValidDkim(r io.Reader) bool {
+func hasValidDkim(r io.Reader, from string) bool {
 	verifications, err := dkim.Verify(r)
 	if err != nil {
 		log.Printf("Error verifying DKIM: %v", err)
@@ -123,21 +124,23 @@ func hasValidDkim(r io.Reader) bool {
 	for _, v := range verifications {
 		if v.Err == nil {
 			log.Printf("Valid signature for: %s", v.Domain)
-			return true
+			return strings.Contains(from, v.Domain)
+			// return true
 		}
 	}
 	return false
 }
 
 func (s *session) Data(r io.Reader) error {
-	var buf bytes.Buffer
-	tee := io.TeeReader(r, &buf)
-
-	valid := hasValidDkim(tee)
-	log.Printf("Valid DKIM: %v %s %s", valid, s.from, s.client)
 
 	if len(s.to) > 0 {
-		email, err := letters.ParseEmail(r)
+		var buf bytes.Buffer
+		tee := io.TeeReader(r, &buf)
+
+		valid := hasValidDkim(&buf, s.from)
+		log.Printf("Valid DKIM: %v %s %s", valid, s.from, s.client)
+
+		email, err := letters.ParseEmail(tee)
 		if err != nil {
 			return err
 		}
