@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/mnako/letters"
 
+	"github.com/emersion/go-msgauth/dkim"
 	"github.com/emersion/go-smtp"
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -112,7 +114,28 @@ func saveHtml(emailId string, userId int64, email letters.Email) error {
 	return nil
 }
 
+func hasValidDkim(r io.Reader) bool {
+	verifications, err := dkim.Verify(r)
+	if err != nil {
+		log.Printf("Error verifying DKIM: %v", err)
+		return false
+	}
+	for _, v := range verifications {
+		if v.Err == nil {
+			log.Printf("Valid signature for: %s", v.Domain)
+			return true
+		}
+	}
+	return false
+}
+
 func (s *session) Data(r io.Reader) error {
+	var buf bytes.Buffer
+	tee := io.TeeReader(r, &buf)
+
+	valid := hasValidDkim(tee)
+	log.Printf("Valid DKIM: %v %s %s", valid, s.from, s.client)
+
 	if len(s.to) > 0 {
 		email, err := letters.ParseEmail(r)
 		if err != nil {
