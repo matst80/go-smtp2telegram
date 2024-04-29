@@ -12,7 +12,7 @@ type Config struct {
 	Domain            string              `json:"domain"`
 	Listen            string              `json:"listen"`
 	OpenAi            AiClassification    `json:"openai"`
-	CustomFromMessage []CustomFromMessage `json:"customRcptMessage"`
+	CustomFromMessage []CustomFromMessage `json:"customFromMessage"`
 	Users             []User              `json:"users"`
 	StopWords         []string            `json:"stopWords"`
 	BlockedIpUrl      string              `json:"blockedIpUrl"`
