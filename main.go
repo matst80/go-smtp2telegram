@@ -124,7 +124,7 @@ func hasValidDkim(r io.Reader, from string) bool {
 	}
 	for _, v := range verifications {
 		if v.Err == nil {
-			// log.Printf("Valid signature for: %s", v.Domain)
+			log.Printf("Valid signature for: %s (from: %s)", v.Domain, from)
 			return strings.Contains(from, v.Domain)
 		}
 	}
