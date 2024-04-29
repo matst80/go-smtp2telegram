@@ -172,13 +172,13 @@ func senderVerified(s *session) string {
 	if s.hasValidDkim {
 		return "verified"
 	}
-	return "unsafe"
+	return "no dkim signature"
 }
 
 func getSuffix(s *session, r rcpt) string {
 	if s.mailId != "" && s.email.HTML != "" {
 		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", r.chatId, s.mailId))
-		return fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
+		return fmt.Sprintf("\n\nRead original\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
 	}
 	return ""
 }
