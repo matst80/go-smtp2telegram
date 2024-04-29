@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/mnako/letters"
 
@@ -24,12 +25,13 @@ type backend struct {
 }
 
 type session struct {
-	client  net.Addr
-	backend *backend
-	from    string
-	to      []rcpt
-	email   letters.Email
-	mailId  string
+	client       net.Addr
+	backend      *backend
+	hasValidDkim bool
+	from         string
+	to           []rcpt
+	email        letters.Email
+	mailId       string
 }
 
 type rcpt struct {
@@ -114,30 +116,30 @@ func saveHtml(emailId string, userId int64, email letters.Email) error {
 	return nil
 }
 
-func hasValidDkim(r io.Reader) bool {
+func hasValidDkim(r io.Reader, from string) bool {
 	verifications, err := dkim.Verify(r)
 	if err != nil {
-		log.Printf("Error verifying DKIM: %v", err)
+		// log.Printf("Error verifying DKIM: %v", err)
 		return false
 	}
 	for _, v := range verifications {
 		if v.Err == nil {
-			log.Printf("Valid signature for: %s", v.Domain)
-			return true
+			// log.Printf("Valid signature for: %s", v.Domain)
+			return strings.Contains(from, v.Domain)
 		}
 	}
 	return false
 }
 
 func (s *session) Data(r io.Reader) error {
-	var buf bytes.Buffer
-	tee := io.TeeReader(r, &buf)
-
-	valid := hasValidDkim(tee)
-	log.Printf("Valid DKIM: %v %s %s", valid, s.from, s.client)
 
 	if len(s.to) > 0 {
-		email, err := letters.ParseEmail(r)
+		var buf bytes.Buffer
+		tee := io.TeeReader(r, &buf)
+
+		s.hasValidDkim = hasValidDkim(&buf, s.from)
+
+		email, err := letters.ParseEmail(tee)
 		if err != nil {
 			return err
 		}
@@ -157,20 +159,35 @@ func (s *session) Data(r io.Reader) error {
 func (s *session) Reset() {}
 
 func textContent(s *session, r rcpt, c *classificationResult) string {
-	prefix := ""
-	if r.extraInfo {
-		prefix = fmt.Sprintf("\nTo: %s\nIp: %s", r.address, s.client)
-	}
-	suffix := ""
-	if s.mailId != "" && s.email.HTML != "" {
-		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", r.chatId, s.mailId))
-		suffix = fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
-	}
+	prefix := getPrefix(r, s)
+	suffix := getSuffix(s, r)
 	if c.SpamRating > -1.0 {
 		prefix = fmt.Sprintf("%s\nSpam rating: %.2f\nSummary: %s", prefix, c.SpamRating, c.Summary)
 	}
+	validText := senderVerified(s)
+	return fmt.Sprintf("From: %s (%s)\nSubject: %s%s\n\n%s%s", s.from, validText, s.email.Headers.Subject, prefix, s.email.Text, suffix)
+}
 
-	return fmt.Sprintf("From: %s\nSubject: %s%s\n\n%s%s", s.from, s.email.Headers.Subject, prefix, s.email.Text, suffix)
+func senderVerified(s *session) string {
+	if s.hasValidDkim {
+		return "verified"
+	}
+	return "unsafe"
+}
+
+func getSuffix(s *session, r rcpt) string {
+	if s.mailId != "" && s.email.HTML != "" {
+		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", r.chatId, s.mailId))
+		return fmt.Sprintf("\n\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
+	}
+	return ""
+}
+
+func getPrefix(r rcpt, s *session) string {
+	if r.extraInfo {
+		return fmt.Sprintf("\nTo: %s\nIp: %s", r.address, s.client)
+	}
+	return ""
 }
 
 func (s *session) Logout() error {
