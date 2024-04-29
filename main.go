@@ -248,6 +248,6 @@ func main() {
 		bot:    bot,
 	})
 
-	log.Println("Starting SMTP server at", s.Addr)
+	log.Printf("Starting SMTP server at %s", s.Addr)
 	log.Fatal(s.ListenAndServe())
 }
