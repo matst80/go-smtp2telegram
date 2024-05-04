@@ -214,6 +214,9 @@ func (s *session) Logout() error {
 			content := textContent(s, r, result)
 
 			msg := botapi.NewMessage(r.chatId, content)
+			if r.extraInfo {
+				msg.ReplyMarkup = botapi.NewReplyKeyboard(botapi.NewKeyboardButtonRow(botapi.NewKeyboardButton("/block " + ip)))
+			}
 
 			s.backend.bot.Send(msg)
 			log.Printf("Sent email to %d", r.chatId)
