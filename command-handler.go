@@ -44,7 +44,14 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 				cmd.config.Users = append(cmd.config.Users, User{ChatId: msg.Chat.ID, Email: email})
 			}
 			sendConfig(cmd.bot, msg.Chat.ID, cmd.config.Users)
-
+		case "block":
+			ip := msg.CommandArguments()
+			if ip != "" {
+				cmd.spam.BlockedIps = append(cmd.spam.BlockedIps, ip)
+				m := botapi.NewMessage(msg.Chat.ID, fmt.Sprintf("Blocked ip %s", ip))
+				_, err := cmd.bot.Send(m)
+				return err
+			}
 		case "ips":
 			m := botapi.NewMessage(msg.Chat.ID, "Updating blocked ips...")
 			cmd.bot.Send(m)
