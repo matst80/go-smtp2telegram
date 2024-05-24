@@ -136,12 +136,11 @@ func (s *session) Data(r io.Reader) error {
 		var buf bytes.Buffer
 		tee := io.TeeReader(r, &buf)
 
-		s.hasValidDkim = checkDkim(&buf, s.from)
-
 		email, err := letters.ParseEmail(tee)
 		if err != nil {
 			return err
 		}
+		s.hasValidDkim = checkDkim(&buf, s.from)
 		s.email = email
 		if email.HTML != "" {
 			mailId := getEmailFileName(email.Headers)
