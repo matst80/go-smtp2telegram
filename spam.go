@@ -33,6 +33,14 @@ func (s *Spam) IsSpamHtml(html string) bool {
 }
 
 func (s *Spam) IsSpamContent(text string) bool {
+	for _, word := range s.SpamWords {
+		if strings.Contains(text, word) {
+			if s.Debug {
+				log.Println("Spam word found: ", word)
+			}
+			return true
+		}
+	}
 	numberOfWords := len(strings.Fields(text))
 	var warningCount = 0
 	for _, word := range s.WarningWords {
