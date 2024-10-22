@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/md5"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -27,7 +25,7 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 	chatId := parts[l-2]
 	fn := strings.Replace(parts[l-1], ".html", "", -1)
 	hash := r.URL.Query().Get("hash")
-	if hash != h.createSimpleHash(chatId+fn) {
+	if hash != h.CreateHash(chatId+fn) {
 		send401(w)
 		return
 	}
@@ -75,16 +73,6 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(data)
 
-}
-
-type hash struct {
-	salt string
-}
-
-func (h *hash) createSimpleHash(key string) string {
-	md5 := md5.New()
-	md5.Write([]byte(fmt.Sprintf("%s%s", key, h.salt)))
-	return fmt.Sprintf("%x", md5.Sum(nil))
 }
 
 func WebServer(h *hash) {

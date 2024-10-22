@@ -7,11 +7,11 @@ import (
 
 func TestCompletion(t *testing.T) {
 	ai := newAiClassifier(nil)
-	result := &classificationResult{
+	result := &ClassificationResult{
 		SpamRating: 0,
 		Summary:    "",
 	}
-	err := ai.classify("This is a test", result)
+	result, err := ai.Classify("This is a test")
 	if err == nil {
 		t.Errorf("Client is nil, expected error")
 	}
@@ -29,7 +29,7 @@ func TestRemoveMarkdown(t *testing.T) {
 	if result != "\n{\"spamRating\": 0.1, \"summary\": \"This is a test\"}\n" {
 		t.Errorf("Expected markdown to be removed")
 	}
-	data := &classificationResult{
+	data := &ClassificationResult{
 		SpamRating: 0,
 		Summary:    "",
 	}

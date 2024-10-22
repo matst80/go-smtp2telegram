@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -16,21 +15,22 @@ import (
 )
 
 type backend struct {
-	hash         *hash
-	bot          *botapi.BotAPI
-	aiClassifier *aiClassifier
-	config       *Config
-	spam         *Spam
+	HashGenerator  HashGenerator
+	Bot            *botapi.BotAPI
+	SpamClassifier SpamClassification
+	Config         *Config
+	SpamChecker    SpamChecker
 }
 
 type session struct {
-	client       net.Addr
 	backend      *backend
-	hasValidDkim bool
-	from         string
-	to           []rcpt
-	email        letters.Email
-	mailId       string
+	Client       net.Addr
+	HasValidDkim bool
+	From         string
+	To           []rcpt
+	Email        letters.Email
+	MailId       string
+	StoredData   map[int64]StorageResult
 }
 
 type rcpt struct {
@@ -43,17 +43,18 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	client := c.Conn().RemoteAddr()
 
 	ip := getIpFromAddr(client)
-	err := bkd.spam.AllowedAddress(ip)
+	err := bkd.SpamChecker.AllowedAddress(ip)
 	if err != nil {
 		log.Printf("Blocked address %s", client)
 		return nil, &smtp.SMTPError{Code: 550, Message: "Blocked address"}
 	}
 
 	return &session{
-		client:  client,
-		backend: bkd,
-		to:      []rcpt{},
-		email:   letters.Email{},
+		Client:     client,
+		backend:    bkd,
+		To:         []rcpt{},
+		Email:      letters.Email{},
+		StoredData: map[int64]StorageResult{},
 	}, nil
 }
 
@@ -62,57 +63,26 @@ func (s *session) AuthPlain(username, password string) error {
 }
 
 func (s *session) Mail(from string, opts *smtp.MailOptions) error {
-	if s.backend.config.CustomFromMessage != nil {
-		for _, i := range s.backend.config.CustomFromMessage {
+	if s.backend.Config.CustomFromMessage != nil {
+		for _, i := range s.backend.Config.CustomFromMessage {
 			if i.Email == from {
 				log.Printf("Custom message for %s: %s", from, i.Message)
 				return &smtp.SMTPError{Code: 550, Message: i.Message}
 			}
 		}
 	}
-	s.from = from
+	s.From = from
 	return nil
 }
 
 func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
-	for _, u := range s.backend.config.Users {
+	for _, u := range s.backend.Config.Users {
 		if to == u.Email {
-			s.to = append(s.to, rcpt{chatId: u.ChatId, extraInfo: u.DebugInfo, address: to})
+			s.To = append(s.To, rcpt{chatId: u.ChatId, extraInfo: u.DebugInfo, address: to})
 			return nil
 		}
 	}
 	return &smtp.SMTPError{Code: 550, Message: "User not found"}
-}
-
-func saveHtml(emailId string, userId int64, email letters.Email) error {
-	// Save email to a file
-	err := os.MkdirAll(fmt.Sprintf("mail/%d", userId), 0755)
-	if err != nil {
-		return err
-	}
-	file, err := os.Create(fmt.Sprintf("mail/%d/%s.html", userId, emailId))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.WriteString(email.HTML)
-	if err != nil {
-		return err
-	}
-	for i, attachment := range email.AttachedFiles {
-		file, err := os.Create(fmt.Sprintf("mail/%d/%s-%d", userId, emailId, i))
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		_, err = file.Write(attachment.Data)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func checkDkim(r io.Reader, from string) bool {
@@ -132,7 +102,7 @@ func checkDkim(r io.Reader, from string) bool {
 
 func (s *session) Data(r io.Reader) error {
 
-	if len(s.to) > 0 {
+	if len(s.To) > 0 {
 		var buf bytes.Buffer
 		tee := io.TeeReader(r, &buf)
 
@@ -140,14 +110,19 @@ func (s *session) Data(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		s.hasValidDkim = checkDkim(&buf, s.from)
-		s.email = email
+		s.HasValidDkim = checkDkim(&buf, s.From)
+		s.Email = email
 		if email.HTML != "" {
 			mailId := getEmailFileName(email.Headers)
 
-			s.mailId = mailId
-			for _, userId := range s.to {
-				go saveHtml(mailId, userId.chatId, s.email)
+			s.MailId = mailId
+			for _, userId := range s.To {
+				data, err := saveMail(mailId, userId.chatId, s.Email)
+				if err != nil {
+					log.Printf("Error saving email: %v", err)
+				} else {
+					s.StoredData[userId.chatId] = data
+				}
 			}
 		}
 	}
@@ -156,76 +131,47 @@ func (s *session) Data(r io.Reader) error {
 
 func (s *session) Reset() {}
 
-func textContent(s *session, r rcpt, c *classificationResult) string {
-	prefix := getPrefix(r, s)
-	suffix := getSuffix(s, r)
-	if c.SpamRating > -1.0 {
-		prefix = fmt.Sprintf("%s\nSpam rating: %.2f\nSummary: %s", prefix, c.SpamRating, c.Summary)
-	}
-	validText := senderVerified(s)
-	return fmt.Sprintf("From: %s (%s)\nSubject: %s%s\n\n%s%s", s.from, validText, s.email.Headers.Subject, prefix, s.email.Text, suffix)
-}
-
-func senderVerified(s *session) string {
-	if s.hasValidDkim {
-		return "verified"
-	}
-	return "no dkim signature"
-}
-
-func getSuffix(s *session, r rcpt) string {
-	if s.mailId != "" && s.email.HTML != "" {
-		hashQuery := s.backend.hash.createSimpleHash(fmt.Sprintf("%d%s", r.chatId, s.mailId))
-		return fmt.Sprintf("\n\nRead original\n%s/mail/%d/%s.html?hash=%s", s.backend.config.BaseUrl, r.chatId, s.mailId, hashQuery)
-	}
-	return ""
-}
-
-func getPrefix(r rcpt, s *session) string {
-	if r.extraInfo {
-		return fmt.Sprintf("\nTo: %s\nIp: %s", r.address, s.client)
-	}
-	return ""
-}
-
 func (s *session) Logout() error {
+	return s.handleMail()
+}
 
-	isSpam := s.backend.spam.IsSpamHtml(s.email.HTML) || s.backend.spam.IsSpamContent(s.email.Text)
-	ip := getIpFromAddr(s.client)
+func (s *session) handleMail() error {
+	isSpam := s.backend.SpamChecker.IsSpamHtml(s.Email.HTML) || s.backend.SpamChecker.IsSpamContent(s.Email.Text)
+	ip := getIpFromAddr(s.Client)
 	if isSpam {
-		s.backend.spam.LogSpamIp(ip)
-		log.Printf("Spam detected (%s) [%s]", s.from, ip)
+		s.backend.SpamChecker.LogSpamIp(ip)
+		log.Printf("Spam detected (%s) [%s]", s.From, ip)
 		return nil
 	}
-	if len(s.to) > 0 {
-		result := &classificationResult{
-			SpamRating: -1,
-			Summary:    "",
-		}
-		if s.email.HTML != "" && s.backend.aiClassifier != nil && len(s.email.HTML) < 1024*10 {
-			if err := s.backend.aiClassifier.classify(s.email.HTML, result); err != nil {
+	var err error
+	var result *ClassificationResult
+	if len(s.To) > 0 {
+
+		if s.Email.HTML != "" && s.backend.SpamClassifier != nil && len(s.Email.HTML) < (1024*20) {
+			if result, err = s.backend.SpamClassifier.Classify(s.Email.HTML); err != nil {
 				log.Printf("Error classifying email: %v", err)
 			}
 		}
-		for _, r := range s.to {
+		for _, r := range s.To {
 
-			content := textContent(s, r, result)
+			content := s.textContent(r, result)
 
 			msg := botapi.NewMessage(r.chatId, content)
+
 			if r.extraInfo {
 				msg.ReplyMarkup = botapi.NewReplyKeyboard(botapi.NewKeyboardButtonRow(botapi.NewKeyboardButton("/block " + ip)))
 			}
 
-			s.backend.bot.Send(msg)
+			_, err = s.backend.Bot.Send(msg)
 			log.Printf("Sent email to %d", r.chatId)
 
 		}
 	} else {
-		s.backend.spam.LogSpamIp(ip)
-		log.Printf("Discarding email, no recipient, from: %s (%s)", s.from, s.client)
+		err = s.backend.SpamChecker.LogSpamIp(ip)
+		log.Printf("Discarding email, no recipient, from: %s (%s)", s.From, s.Client)
 	}
 
-	return nil
+	return err
 }
 
 func main() {
@@ -263,11 +209,11 @@ func main() {
 	}
 
 	s := smtp.NewServer(&backend{
-		aiClassifier: newAiClassifier(&config.OpenAi),
-		hash:         h,
-		bot:          bot,
-		config:       config,
-		spam:         spm,
+		SpamClassifier: newAiClassifier(&config.OpenAi),
+		HashGenerator:  h,
+		Bot:            bot,
+		Config:         config,
+		SpamChecker:    spm,
 	})
 	go WebServer(h)
 

@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+type SpamChecker interface {
+	IsSpamContent(text string) bool
+	IsSpamHtml(html string) bool
+	AllowedAddress(clientIp string) error
+	LogSpamIp(ip string) error
+}
+
 type Spam struct {
 	SpamWords    []string
 	WarningWords []string

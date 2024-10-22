@@ -9,13 +9,18 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-type aiClassifier struct {
+type SpamClassification interface {
+	Classify(text string) (*ClassificationResult, error)
+}
+
+type OpenAiClassifier struct {
 	client *openai.Client
 }
 
-type classificationResult struct {
+type ClassificationResult struct {
 	SpamRating float64 `json:"spamRating"`
 	Summary    string  `json:"summary"`
+	Success    bool    `json:"-"`
 }
 
 func removeMarkdown(text string) string {
@@ -24,10 +29,10 @@ func removeMarkdown(text string) string {
 
 const SystemPrompt = "You are a mail analyzer, summarize and classify content and respond in json format with the keys spamRating (0 to 10) and short summary of the content, include passwords and codes if found."
 
-func (a *aiClassifier) classify(text string, result *classificationResult) error {
+func (a *OpenAiClassifier) Classify(text string) (*ClassificationResult, error) {
 
 	if a.client == nil {
-		return fmt.Errorf("OpenAI client is not initialized")
+		return nil, fmt.Errorf("OpenAI client is not initialized")
 	}
 	resp, err := a.client.CreateChatCompletion(
 		context.Background(),
@@ -47,32 +52,33 @@ func (a *aiClassifier) classify(text string, result *classificationResult) error
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if resp.Choices == nil || len(resp.Choices) == 0 {
-		return fmt.Errorf("no choices in response")
+	if len(resp.Choices) == 0 {
+		return nil, fmt.Errorf("no choices in response")
 	}
 
 	c := removeMarkdown(resp.Choices[0].Message.Content)
-
+	result := &ClassificationResult{Success: false}
 	err = json.Unmarshal([]byte(c), result)
 	if err != nil {
 		fmt.Printf("Error reading result: %v\nInput: %s", err, c)
-		return err
+		return nil, err
 	}
+	result.Success = true
 
-	return nil
+	return result, nil
 }
 
-func newAiClassifier(config *AiClassification) *aiClassifier {
+func newAiClassifier(config *AiClassification) SpamClassification {
 	if config == nil {
-		return &aiClassifier{}
+		return &OpenAiClassifier{}
 	}
 	client := &openai.Client{}
 	if config.ApiKey != "" {
 		client = openai.NewClient(config.ApiKey)
 	}
-	return &aiClassifier{
+	return &OpenAiClassifier{
 		client: client,
 	}
 }
