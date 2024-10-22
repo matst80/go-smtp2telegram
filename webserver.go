@@ -35,6 +35,7 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error reading %s: %v", r.URL.Path, err)
 		send404(w)
+		return
 	}
 	valid, fileName := h.validateHash(r.URL)
 	if !valid {
