@@ -20,7 +20,10 @@ func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 
 		sb.WriteString(s.Email.Text)
 	} else {
-		sb.WriteString(fmt.Sprintf("Spam from: %s, Subject: %s", s.From, s.Email.Headers.Subject))
+		sb.WriteString(fmt.Sprintf("Spam from: %s, Subject: %s\n", s.From, s.Email.Headers.Subject))
+		if c != nil {
+			sb.WriteString(fmt.Sprintf("Spam rating: %.2f\n\n%s", c.SpamRating, c.Summary))
+		}
 	}
 
 	userData, ok := s.StoredData[r.chatId]
