@@ -113,19 +113,19 @@ func (s *session) Data(r io.Reader) error {
 		}
 		s.HasValidDkim = checkDkim(&buf, s.From)
 		s.Email = email
-		if email.HTML != "" {
-			mailId := getEmailFileName(email.Headers)
 
-			s.MailId = mailId
-			for _, userId := range s.To {
-				data, err := saveMail(mailId, userId.chatId, s.Email)
-				if err != nil {
-					log.Printf("Error saving email: %v", err)
-				} else {
-					s.StoredData[userId.chatId] = data
-				}
+		mailId := getEmailFileName(email.Headers)
+
+		s.MailId = mailId
+		for _, userId := range s.To {
+			data, err := saveMail(mailId, userId.chatId, s.Email)
+			if err != nil {
+				log.Printf("Error saving email: %v", err)
+			} else {
+				s.StoredData[userId.chatId] = data
 			}
 		}
+
 	}
 	return nil
 }
