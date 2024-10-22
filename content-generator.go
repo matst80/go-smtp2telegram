@@ -14,7 +14,7 @@ func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 		sb.WriteString(fmt.Sprintf("To: %s\nIp: %s\n", r.address, s.Client))
 	}
 
-	if c.SpamRating > -1.0 {
+	if c != nil {
 		sb.WriteString(fmt.Sprintf("Spam rating: %.2f\n\n%s\n\n", c.SpamRating, c.Summary))
 	}
 
