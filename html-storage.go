@@ -63,7 +63,7 @@ type StorageResult struct {
 }
 
 func saveMail(emailId string, userId int64, email letters.Email) (StorageResult, error) {
-	// Save email to a file
+	var err error
 	ret := StorageResult{
 		Attachments: []StoredFile{},
 	}
@@ -72,7 +72,11 @@ func saveMail(emailId string, userId int64, email letters.Email) (StorageResult,
 		UserId:   userId,
 		FileName: fmt.Sprintf("%s.html", emailId),
 	}
-	err := ret.Html.SaveString(email.HTML)
+	if email.HTML == "" {
+		err = ret.Html.SaveString(fmt.Sprintf("<html><body><code><pre>%s</pre></code></body></html>", email.Text))
+	} else {
+		err = ret.Html.SaveString(email.HTML)
+	}
 	if err != nil {
 		return ret, err
 	}
