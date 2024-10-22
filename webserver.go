@@ -41,7 +41,7 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 		send401(w)
 		return
 	}
-	if !strings.HasSuffix(r.URL.Path, ".html") {
+	if strings.HasSuffix(r.URL.Path, ".html") {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	} else {
 		w.Header().Set("Content-Type", "application/octet-stream; charset=utf-8")
