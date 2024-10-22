@@ -7,19 +7,13 @@ import (
 
 func TestCompletion(t *testing.T) {
 	ai := newAiClassifier(nil)
-	result := &ClassificationResult{
-		SpamRating: 0,
-		Summary:    "",
-	}
+
 	result, err := ai.Classify("This is a test")
 	if err == nil {
 		t.Errorf("Client is nil, expected error")
 	}
-	if result.Summary != "" {
-		t.Errorf("Summary is empty")
-	}
-	if result.SpamRating != 0 {
-		t.Errorf("SpamRating has been set")
+	if result != nil {
+		t.Errorf("Should not have a result")
 	}
 }
 

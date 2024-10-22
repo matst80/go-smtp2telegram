@@ -7,18 +7,21 @@ import (
 
 func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 	var sb strings.Builder
+	if s.HasValidDkim {
+		sb.WriteString(fmt.Sprintf("From: %s\nSubject: %s\n", s.From, s.Email.Headers.Subject))
 
-	sb.WriteString(fmt.Sprintf("From: %s (%s)\nSubject: %s\n", s.From, s.senderVerified(), s.Email.Headers.Subject))
+		if r.extraInfo {
+			sb.WriteString(fmt.Sprintf("To: %s\nIp: %s\n", r.address, s.Client))
+		}
 
-	if r.extraInfo {
-		sb.WriteString(fmt.Sprintf("To: %s\nIp: %s\n", r.address, s.Client))
+		if c != nil {
+			sb.WriteString(fmt.Sprintf("Spam rating: %.2f\n\n%s\n\n", c.SpamRating, c.Summary))
+		}
+
+		sb.WriteString(s.Email.Text)
+	} else {
+		sb.WriteString(fmt.Sprintf("Spam from: %s, Subject: %s", s.From, s.Email.Headers.Subject))
 	}
-
-	if c != nil {
-		sb.WriteString(fmt.Sprintf("Spam rating: %.2f\n\n%s\n\n", c.SpamRating, c.Summary))
-	}
-
-	sb.WriteString(s.Email.Text)
 
 	userData, ok := s.StoredData[r.chatId]
 	if ok && s.backend.HashGenerator != nil {
@@ -31,11 +34,4 @@ func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 	}
 
 	return sb.String()
-}
-
-func (s *session) senderVerified() string {
-	if s.HasValidDkim {
-		return "verified"
-	}
-	return "no dkim signature"
 }
