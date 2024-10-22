@@ -51,8 +51,8 @@ func TestContentGenerator(t *testing.T) {
 		Summary:    "AI SUMMARY",
 	},
 	)
-	expected := `From: from@example.com
-Subject: Subject
+	expected := `Subject: Subject
+From: from@example.com
 To: test@example.com
 Ip: 127.0.0.1:1
 Spam rating: 0.50

@@ -8,7 +8,7 @@ import (
 func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 	var sb strings.Builder
 	if s.HasValidDkim {
-		sb.WriteString(fmt.Sprintf("From: %s\nSubject: %s\n", s.From, s.Email.Headers.Subject))
+		sb.WriteString(fmt.Sprintf("Subject: %s\nFrom: %s\n", s.Email.Headers.Subject, s.From))
 
 		if r.extraInfo {
 			sb.WriteString(fmt.Sprintf("To: %s\nIp: %s\n", r.address, s.Client))
