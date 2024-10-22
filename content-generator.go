@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-func (s *session) textContent(r rcpt, c *ClassificationResult) string {
+func (s *session) textContent(r Recipient, c *ClassificationResult) string {
 	var sb strings.Builder
 	if s.HasValidDkim {
 		sb.WriteString(fmt.Sprintf("Subject: %s\nFrom: %s\n", s.Email.Headers.Subject, s.From))
 
-		if r.extraInfo {
-			sb.WriteString(fmt.Sprintf("To: %s\nIp: %s\n", r.address, s.Client))
+		if r.WantsDebugInfo {
+			sb.WriteString(fmt.Sprintf("To: %s\nIp: %s\n", r.Address, s.Client))
 		}
 
 		if c != nil {
@@ -26,7 +26,7 @@ func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 		}
 	}
 
-	userData, ok := s.StoredData[r.chatId]
+	userData, ok := s.StoredData[r.ChatId]
 	if ok && s.backend.HashGenerator != nil {
 
 		sb.WriteString(fmt.Sprintf("\n\nRead original: %s", userData.Html.WebUrl(s.backend.Config.BaseUrl, s.backend.HashGenerator)))

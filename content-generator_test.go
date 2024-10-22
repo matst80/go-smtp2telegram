@@ -42,10 +42,10 @@ func TestContentGenerator(t *testing.T) {
 			},
 		},
 	}
-	content := s.textContent(rcpt{
-		extraInfo: true,
-		address:   "test@example.com",
-		chatId:    1,
+	content := s.textContent(Recipient{
+		WantsDebugInfo: true,
+		Address:        "test@example.com",
+		ChatId:         1,
 	}, &ClassificationResult{
 		SpamRating: 0.5,
 		Summary:    "AI SUMMARY",
@@ -104,10 +104,10 @@ func TestContentGeneratorNoDkim(t *testing.T) {
 			},
 		},
 	}
-	content := s.textContent(rcpt{
-		extraInfo: true,
-		address:   "test@example.com",
-		chatId:    1,
+	content := s.textContent(Recipient{
+		WantsDebugInfo: true,
+		Address:        "test@example.com",
+		ChatId:         1,
 	}, &ClassificationResult{
 		SpamRating: 0.5,
 		Summary:    "AI SUMMARY",

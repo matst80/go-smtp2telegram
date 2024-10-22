@@ -27,16 +27,16 @@ type session struct {
 	Client       net.Addr
 	HasValidDkim bool
 	From         string
-	To           []rcpt
+	To           []Recipient
 	Email        letters.Email
 	MailId       string
 	StoredData   map[int64]StorageResult
 }
 
-type rcpt struct {
-	extraInfo bool
-	address   string
-	chatId    int64
+type Recipient struct {
+	WantsDebugInfo bool
+	Address        string
+	ChatId         int64
 }
 
 func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
@@ -52,7 +52,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	return &session{
 		Client:     client,
 		backend:    bkd,
-		To:         []rcpt{},
+		To:         []Recipient{},
 		Email:      letters.Email{},
 		StoredData: map[int64]StorageResult{},
 	}, nil
@@ -79,7 +79,7 @@ func (s *session) Mail(from string, opts *smtp.MailOptions) error {
 func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	for _, u := range s.backend.Config.Users {
 		if to == u.Email {
-			s.To = append(s.To, rcpt{chatId: u.ChatId, extraInfo: u.DebugInfo, address: to})
+			s.To = append(s.To, Recipient{ChatId: u.ChatId, WantsDebugInfo: u.DebugInfo, Address: to})
 			return nil
 		}
 	}
@@ -118,11 +118,11 @@ func (s *session) Data(r io.Reader) error {
 
 		s.MailId = mailId
 		for _, userId := range s.To {
-			data, err := saveMail(mailId, userId.chatId, s.Email)
+			data, err := saveMail(mailId, userId.ChatId, s.Email)
 			if err != nil {
 				log.Printf("Error saving email: %v", err)
 			} else {
-				s.StoredData[userId.chatId] = data
+				s.StoredData[userId.ChatId] = data
 			}
 		}
 
@@ -157,14 +157,14 @@ func (s *session) handleMail() error {
 
 			content := s.textContent(r, result)
 
-			msg := botapi.NewMessage(r.chatId, content)
+			msg := botapi.NewMessage(r.ChatId, content)
 
-			if r.extraInfo {
+			if r.WantsDebugInfo {
 				msg.ReplyMarkup = botapi.NewReplyKeyboard(botapi.NewKeyboardButtonRow(botapi.NewKeyboardButton("/block " + ip)))
 			}
 
 			_, err = s.backend.Bot.Send(msg)
-			log.Printf("Sent email to %d", r.chatId)
+			log.Printf("Sent email to %d (%s)", r.ChatId, r.Address)
 
 		}
 	} else {
