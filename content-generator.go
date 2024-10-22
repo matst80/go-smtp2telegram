@@ -25,11 +25,10 @@ func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 
 	userData, ok := s.StoredData[r.chatId]
 	if ok && s.backend.HashGenerator != nil {
-		hashQuery := s.backend.HashGenerator.CreateHash(fmt.Sprintf("%d%s", r.chatId, s.MailId))
 
-		sb.WriteString(fmt.Sprintf("\n\nRead original: %s", userData.Html.WebUrl(s.backend.Config.BaseUrl, hashQuery)))
+		sb.WriteString(fmt.Sprintf("\n\nRead original: %s", userData.Html.WebUrl(s.backend.Config.BaseUrl, s.backend.HashGenerator)))
 		for _, attachment := range userData.Attachments {
-			sb.WriteString(fmt.Sprintf("\nAttachment: %s", attachment.WebUrl(s.backend.Config.BaseUrl, hashQuery)))
+			sb.WriteString(fmt.Sprintf("\nAttachment: %s", attachment.WebUrl(s.backend.Config.BaseUrl, s.backend.HashGenerator)))
 		}
 	}
 

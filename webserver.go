@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -13,6 +15,20 @@ func toRelativeUrl(url string) string {
 	return strings.Replace(url, "/", "", 1)
 }
 
+func (h *hash) validateHash(url *url.URL) (bool, string) {
+	hash := url.Query().Get("hash")
+	parts := strings.Split(url.Path, "/")
+	l := len(parts)
+	chatId := parts[l-2]
+	fn := parts[l-1]
+	valid := h.CreateHash(chatId+fn) == hash
+	if !valid && strings.HasSuffix(fn, ".html") {
+		fn = strings.TrimSuffix(fn, ".html")
+		valid = h.CreateHash(chatId+fn) == hash
+	}
+	return valid, fn
+}
+
 func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := readFile(toRelativeUrl(r.URL.Path))
@@ -20,16 +36,18 @@ func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error reading %s: %v", r.URL.Path, err)
 		send404(w)
 	}
-	parts := strings.Split(r.URL.Path, "/")
-	l := len(parts)
-	chatId := parts[l-2]
-	fn := strings.Replace(parts[l-1], ".html", "", -1)
-	hash := r.URL.Query().Get("hash")
-	if hash != h.CreateHash(chatId+fn) {
+	valid, fileName := h.validateHash(r.URL)
+	if !valid {
 		send401(w)
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if !strings.HasSuffix(r.URL.Path, ".html") {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	} else {
+		w.Header().Set("Content-Type", "application/octet-stream; charset=utf-8")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileName))
+	}
+
 	w.Header().Add("Content-Security-Policy", "default-src 'self'; img-src *; media-src *")
 	w.Write(data)
 }

@@ -21,7 +21,11 @@ func (file *StoredFile) Exists() bool {
 	return !os.IsNotExist(err)
 }
 
-func (file *StoredFile) WebUrl(baseUrl string, hash string) string {
+func (file *StoredFile) WebUrl(baseUrl string, hashGenerator HashGenerator) string {
+	hash := "no-hash-generator"
+	if hashGenerator != nil {
+		hash = hashGenerator.CreateHash(fmt.Sprintf("%d%s", file.UserId, file.FileName))
+	}
 	return fmt.Sprintf("%s/mail/%d/%s?hash=%s", baseUrl, file.UserId, file.FileName, hash)
 }
 

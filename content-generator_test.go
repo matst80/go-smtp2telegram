@@ -61,8 +61,8 @@ AI SUMMARY
 
 Message
 
-Read original: http://example.com/mail/1/test.html?hash=c4ca4238a0b923820dcc509a6f75849b
-Attachment: http://example.com/mail/1/test-0?hash=c4ca4238a0b923820dcc509a6f75849b`
+Read original: http://example.com/mail/1/test.html?hash=b52cf6bc9899188ec2059ff046b87a37
+Attachment: http://example.com/mail/1/test-0?hash=e41481ea567d43b98e5ec6b19ec64030`
 
 	if content != expected {
 		t.Errorf("Expected %s, got %s", expected, content)
@@ -115,8 +115,8 @@ func TestContentGeneratorNoDkim(t *testing.T) {
 	)
 	expected := `Spam from: junk@email.com, Subject: Subject
 
-Read original: http://example.com/mail/1/test.html?hash=c4ca4238a0b923820dcc509a6f75849b
-Attachment: http://example.com/mail/1/test-0?hash=c4ca4238a0b923820dcc509a6f75849b`
+Read original: http://example.com/mail/1/test.html?hash=b52cf6bc9899188ec2059ff046b87a37
+Attachment: http://example.com/mail/1/test-0?hash=e41481ea567d43b98e5ec6b19ec64030`
 
 	if content != expected {
 		t.Errorf("Expected %s, got %s", expected, content)
