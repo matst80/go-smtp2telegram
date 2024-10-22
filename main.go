@@ -59,6 +59,7 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 }
 
 func (s *session) AuthPlain(username, password string) error {
+	log.Printf("Someone is trying to login: %s, %s", username, password)
 	return nil
 }
 
