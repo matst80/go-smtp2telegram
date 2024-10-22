@@ -21,7 +21,7 @@ func (s *session) textContent(r rcpt, c *ClassificationResult) string {
 	sb.WriteString(s.Email.Text)
 
 	userData, ok := s.StoredData[r.chatId]
-	if ok {
+	if ok && s.backend.HashGenerator != nil {
 		hashQuery := s.backend.HashGenerator.CreateHash(fmt.Sprintf("%d%s", r.chatId, s.MailId))
 
 		sb.WriteString(fmt.Sprintf("\n\nRead original: %s", userData.Html.WebUrl(s.backend.Config.BaseUrl, hashQuery)))
