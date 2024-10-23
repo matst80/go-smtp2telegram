@@ -1,7 +1,10 @@
 package main
 
 import (
+	"compress/gzip"
+	"encoding/gob"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/mnako/letters"
@@ -50,6 +53,21 @@ func (file *StoredFile) SaveString(data string) error {
 	return err
 }
 
+func (file *StoredFile) SaveRaw(email letters.Email) error {
+	f, err := file.createFile()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	fz := gzip.NewWriter(f)
+	defer fz.Close()
+
+	enc := gob.NewEncoder(fz)
+	err = enc.Encode(email)
+	return err
+}
+
 func (file *StoredFile) SaveData(data []byte) error {
 	f, err := file.createFile()
 	if err != nil {
@@ -70,6 +88,15 @@ func saveMail(emailId string, userId int64, email letters.Email) (StorageResult,
 	var err error
 	ret := StorageResult{
 		Attachments: []StoredFile{},
+	}
+
+	saveRawEmail := StoredFile{
+		UserId:   userId,
+		FileName: fmt.Sprintf("%s.eml", emailId),
+	}
+	err = saveRawEmail.SaveRaw(email)
+	if err != nil {
+		log.Printf("Error saving raw email: %v", err)
 	}
 
 	ret.Html = StoredFile{
