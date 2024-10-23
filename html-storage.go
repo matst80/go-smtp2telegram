@@ -81,6 +81,7 @@ func (file *StoredFile) SaveData(data []byte) error {
 
 type StorageResult struct {
 	Html        StoredFile
+	Raw         StoredFile
 	Attachments []StoredFile
 }
 
@@ -97,6 +98,7 @@ func saveMail(emailId string, userId int64, email letters.Email) (StorageResult,
 	err = saveRawEmail.SaveRaw(email)
 	if err != nil {
 		log.Printf("Error saving raw email: %v", err)
+		ret.Raw = saveRawEmail
 	}
 
 	ret.Html = StoredFile{
