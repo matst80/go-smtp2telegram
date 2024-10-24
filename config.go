@@ -14,6 +14,7 @@ type Config struct {
 	OpenAi            AiClassification    `json:"openai"`
 	CustomFromMessage []CustomFromMessage `json:"customFromMessage"`
 	Users             []User              `json:"users"`
+	AllowBlockedIps   bool                `json:"allowBlockedIps"`
 	StopWords         []string            `json:"stopWords"`
 	BlockedIpUrl      string              `json:"blockedIpUrl"`
 	WarningWordsUrl   string              `json:"warningWordsUrl"`

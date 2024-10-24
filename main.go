@@ -45,8 +45,12 @@ func (bkd *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	ip := getIpFromAddr(client)
 	err := bkd.SpamChecker.AllowedAddress(ip)
 	if err != nil {
-		log.Printf("Blocked address %s", client)
-		return nil, &smtp.SMTPError{Code: 550, Message: "Blocked address"}
+		if bkd.Config.AllowBlockedIps {
+			log.Printf("Allowing blocked address %s", client)
+		} else {
+			log.Printf("Blocked address %s", client)
+			return nil, &smtp.SMTPError{Code: 550, Message: "Blocked address"}
+		}
 	}
 
 	return &session{
