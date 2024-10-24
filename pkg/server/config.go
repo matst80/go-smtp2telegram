@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 )
 
 type Config struct {
+	Mutex             sync.Mutex
 	Token             string              `json:"token"`
 	Domain            string              `json:"domain"`
 	DkimSelector      string              `json:"dkimSelector"`
@@ -40,11 +42,20 @@ type LastMail struct {
 }
 
 type User struct {
-	Email          string    `json:"email"`
-	DebugInfo      bool      `json:"debugInfo"`
-	DefaultSubject string    `json:"defaultSubject"`
-	LastMail       *LastMail `json:"-"`
-	ChatId         int64     `json:"chatId"`
+	Email          string   `json:"email"`
+	DebugInfo      bool     `json:"debugInfo"`
+	DefaultSubject string   `json:"defaultSubject"`
+	lastMail       LastMail `json:"-"`
+	ChatId         int64    `json:"chatId"`
+}
+
+func (u *User) SetLastMail(subject, from string) {
+	u.lastMail.Subject = subject
+	u.lastMail.From = from
+}
+
+func (u *User) LastMail() LastMail {
+	return u.lastMail
 }
 
 func readFile(file string) ([]byte, error) {
@@ -58,6 +69,7 @@ func readFile(file string) ([]byte, error) {
 
 func parseConfig(bytes []byte) (*Config, error) {
 	config := &Config{
+		Mutex:             sync.Mutex{},
 		Users:             []User{},
 		StopWords:         []string{},
 		CustomFromMessage: []CustomFromMessage{},

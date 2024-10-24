@@ -65,11 +65,13 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 		switch command := msg.Command(); command {
 		case "reply":
 			user := cmd.findUser(msg.Chat.ID)
-			if user == nil || user.LastMail != nil {
-				log.Printf("User %v", user)
+			if user == nil {
 				return fmt.Errorf("user data not found")
 			}
-			d := *user.LastMail
+			d := user.LastMail()
+			if d.From == "" {
+				return fmt.Errorf("no last mail")
+			}
 			subject := "Re " + d.Subject
 
 			message := client.Message{

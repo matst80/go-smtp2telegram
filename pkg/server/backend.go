@@ -82,7 +82,12 @@ func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
 func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	for _, u := range s.backend.Config.Users {
 		if to == u.Email {
-			s.To = append(s.To, Recipient{ChatId: u.ChatId, WantsDebugInfo: u.DebugInfo, Address: to, User: &u})
+			s.To = append(s.To, Recipient{
+				ChatId:         u.ChatId,
+				WantsDebugInfo: u.DebugInfo,
+				Address:        to,
+				User:           &u,
+			})
 			return nil
 		}
 	}
@@ -170,7 +175,11 @@ func (s *Session) handleMail() error {
 			}
 			if r.User != nil {
 				log.Printf("Setting user last email %s %s", s.From, s.Email.Headers.Subject)
-				r.User.LastMail = &LastMail{From: s.From, Subject: s.Email.Headers.Subject}
+				usr := r.User
+				usr.LastMail = LastMail{
+					From:    s.From,
+					Subject: s.Email.Headers.Subject,
+				}
 			}
 			_, err = s.backend.Bot.Send(msg)
 			log.Printf("Sent email to %d (%s)", r.ChatId, r.Address)
