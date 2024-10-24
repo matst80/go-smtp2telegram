@@ -57,16 +57,19 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 	if msg.IsCommand() {
 		switch command := msg.Command(); command {
 		case "send":
-			log.Println(msg.CommandArguments())
 			user := cmd.findUser(msg.Chat.ID)
 			if user == nil {
 				return fmt.Errorf("User not found")
 			}
-			messge, err := client.ParseMessage(msg.CommandArguments(), user.Email, "Chat reply")
+			subject := "Chat message"
+			if user.DefaultSubject != "" {
+				subject = user.DefaultSubject
+			}
+			message, err := client.ParseMessage(msg.CommandArguments(), user.Email, subject)
 			if err != nil {
 				return err
 			}
-			err = cmd.smtpClient.Send(*messge)
+			err = cmd.smtpClient.Send(*message)
 
 			return err
 
@@ -75,7 +78,6 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 		case "users":
 			sendConfig(cmd.bot, msg.Chat.ID, cmd.config.Users)
 		case "add":
-			log.Println(msg.CommandArguments())
 			p := getValidEmailAddresses(msg.CommandArguments())
 			for _, email := range p {
 				log.Printf("Adding %s", email)
