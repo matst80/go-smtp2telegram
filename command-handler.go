@@ -53,18 +53,42 @@ func (cmd *commandHandler) findUser(chatId int64) *server.User {
 	return nil
 }
 
+func getDefaultSubject(user *server.User) string {
+	if user.DefaultSubject != "" {
+		return user.DefaultSubject
+	}
+	return "Chat message"
+}
+
 func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 	if msg.IsCommand() {
 		switch command := msg.Command(); command {
+		case "reply":
+			user := cmd.findUser(msg.Chat.ID)
+			if user == nil || user.LastMail.From == "" {
+				return fmt.Errorf("user data not found")
+			}
+			subject := "Re: " + user.LastMail.Subject
+
+			message := client.Message{
+				To:      user.LastMail.From,
+				From:    user.Email,
+				Subject: subject,
+				Body:    []byte(msg.CommandArguments()),
+			}
+			fromDomain, err := message.FromDomain()
+			if err != nil {
+				return err
+			}
+			message.MessageID = client.MakeMessageId(fromDomain)
+			err = cmd.smtpClient.Send(message)
+			return err
 		case "send":
 			user := cmd.findUser(msg.Chat.ID)
 			if user == nil {
-				return fmt.Errorf("User not found")
+				return fmt.Errorf("user not found")
 			}
-			subject := "Chat message"
-			if user.DefaultSubject != "" {
-				subject = user.DefaultSubject
-			}
+			subject := getDefaultSubject(user)
 			message, err := client.ParseMessage(msg.CommandArguments(), user.Email, subject)
 			if err != nil {
 				return err
