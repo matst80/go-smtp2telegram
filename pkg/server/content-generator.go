@@ -1,11 +1,11 @@
-package main
+package server
 
 import (
 	"fmt"
 	"strings"
 )
 
-func (s *session) textContent(r Recipient, c *ClassificationResult) string {
+func (s *Session) textContent(r Recipient, c *ClassificationResult) string {
 	var sb strings.Builder
 	if s.HasValidDkim {
 		sb.WriteString(fmt.Sprintf("Subject: %s\nFrom: %s\n", s.Email.Headers.Subject, s.From))

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -70,7 +70,7 @@ func (a *OpenAiClassifier) Classify(text string) (*ClassificationResult, error) 
 	return result, nil
 }
 
-func newAiClassifier(config *AiClassification) SpamClassification {
+func MakeAiClassifier(config *AiClassification) SpamClassification {
 	if config == nil {
 		return &OpenAiClassifier{}
 	}

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+type webserver struct {
+	hashGenerator HashGenerator
+}
+
 func toRelativeUrl(url string) string {
 	if url == "/" {
 		return "/index.html"
@@ -15,21 +19,21 @@ func toRelativeUrl(url string) string {
 	return strings.Replace(url, "/", "", 1)
 }
 
-func (h *hash) validateHash(url *url.URL) (bool, string) {
+func (h *webserver) validateHash(url *url.URL) (bool, string) {
 	hash := url.Query().Get("hash")
 	parts := strings.Split(url.Path, "/")
 	l := len(parts)
 	chatId := parts[l-2]
 	fn := parts[l-1]
-	valid := h.CreateHash(chatId+fn) == hash
+	valid := h.hashGenerator.CreateHash(chatId+fn) == hash
 	if !valid && strings.HasSuffix(fn, ".html") {
 		fn = strings.TrimSuffix(fn, ".html")
-		valid = h.CreateHash(chatId+fn) == hash
+		valid = h.hashGenerator.CreateHash(chatId+fn) == hash
 	}
 	return valid, fn
 }
 
-func (h *hash) mailHandler(w http.ResponseWriter, r *http.Request) {
+func (h *webserver) mailHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := readFile(toRelativeUrl(r.URL.Path))
 	if err != nil {
@@ -94,10 +98,12 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func WebServer(h *hash) {
+func WebServer(h *SimpleHash) {
+	webserver := &webserver{hashGenerator: h}
 
 	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/mail/", h.mailHandler)
+	http.HandleFunc("GET /mail/", webserver.mailHandler)
+	//http.HandleFunc("POST", "/send-mail", h.sendMail)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))

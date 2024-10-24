@@ -4,14 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"knatofs.se/crapmail/pkg/client"
+	"knatofs.se/crapmail/pkg/server"
 )
 
 type commandHandler struct {
-	spam   *Spam
-	config *Config
-	bot    *botapi.BotAPI
+	smtpClient *client.SmtpClient
+	spam       *server.Spam
+	config     *server.Config
+	bot        *botapi.BotAPI
 }
 
 func getMessageJson(data interface{}) string {
@@ -29,9 +33,43 @@ func sendConfig(bot *botapi.BotAPI, chatId int64, data interface{}) error {
 	return err
 }
 
+func getValidEmailAddresses(input string) []string {
+	emails := strings.Split(input, " ")
+	var validEmails []string
+	for _, email := range emails {
+		if strings.Contains(email, "@") {
+			validEmails = append(validEmails, email)
+		}
+	}
+	return validEmails
+}
+
+func (cmd *commandHandler) findUser(chatId int64) *server.User {
+	for _, user := range cmd.config.Users {
+		if user.ChatId == chatId {
+			return &user
+		}
+	}
+	return nil
+}
+
 func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 	if msg.IsCommand() {
 		switch command := msg.Command(); command {
+		case "send":
+			log.Println(msg.CommandArguments())
+			user := cmd.findUser(msg.Chat.ID)
+			if user == nil {
+				return fmt.Errorf("User not found")
+			}
+			messge, err := client.ParseMessage(msg.CommandArguments(), user.Email, "Chat reply")
+			if err != nil {
+				return err
+			}
+			err = cmd.smtpClient.Send(*messge)
+
+			return err
+
 		case "config":
 			sendConfig(cmd.bot, msg.Chat.ID, cmd.config)
 		case "users":
@@ -41,7 +79,7 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 			p := getValidEmailAddresses(msg.CommandArguments())
 			for _, email := range p {
 				log.Printf("Adding %s", email)
-				cmd.config.Users = append(cmd.config.Users, User{ChatId: msg.Chat.ID, Email: email})
+				cmd.config.Users = append(cmd.config.Users, server.User{ChatId: msg.Chat.ID, Email: email})
 			}
 			sendConfig(cmd.bot, msg.Chat.ID, cmd.config.Users)
 		case "block":

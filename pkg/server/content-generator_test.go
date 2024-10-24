@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"net"
@@ -8,9 +8,9 @@ import (
 )
 
 func TestContentGenerator(t *testing.T) {
-	s := &session{
-		backend: &backend{
-			HashGenerator: &hash{},
+	s := &Session{
+		backend: &Backend{
+			HashGenerator: &SimpleHash{},
 			Config: &Config{
 				BaseUrl: "http://example.com",
 			},
@@ -70,9 +70,9 @@ Attachment: http://example.com/mail/1/test-0?hash=e41481ea567d43b98e5ec6b19ec640
 }
 
 func TestContentGeneratorNoDkim(t *testing.T) {
-	s := &session{
-		backend: &backend{
-			HashGenerator: &hash{},
+	s := &Session{
+		backend: &Backend{
+			HashGenerator: &SimpleHash{},
 			Config: &Config{
 				BaseUrl: "http://example.com",
 			},

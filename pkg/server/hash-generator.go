@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"crypto/md5"
@@ -9,12 +9,12 @@ type HashGenerator interface {
 	CreateHash(key string) string
 }
 
-type hash struct {
-	salt string
+type SimpleHash struct {
+	Salt string
 }
 
-func (h *hash) CreateHash(key string) string {
+func (h *SimpleHash) CreateHash(key string) string {
 	md5 := md5.New()
-	md5.Write([]byte(fmt.Sprintf("%s%s", key, h.salt)))
+	md5.Write([]byte(fmt.Sprintf("%s%s", key, h.Salt)))
 	return fmt.Sprintf("%x", md5.Sum(nil))
 }

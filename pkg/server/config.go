@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Token             string              `json:"token"`
 	Domain            string              `json:"domain"`
+	DkimSelector      string              `json:"dkimSelector"`
 	Listen            string              `json:"listen"`
 	OpenAi            AiClassification    `json:"openai"`
 	CustomFromMessage []CustomFromMessage `json:"customFromMessage"`

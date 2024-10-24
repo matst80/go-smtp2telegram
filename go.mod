@@ -8,6 +8,7 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/mnako/letters v0.2.2
 	github.com/sashabaranov/go-openai v1.23.0
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 )
 
 require (

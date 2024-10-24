@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -19,17 +19,6 @@ func getIpFromAddr(addr net.Addr) string {
 		clientIp = s
 	}
 	return clientIp
-}
-
-func getValidEmailAddresses(input string) []string {
-	emails := strings.Split(input, " ")
-	var validEmails []string
-	for _, email := range emails {
-		if strings.Contains(email, "@") {
-			validEmails = append(validEmails, email)
-		}
-	}
-	return validEmails
 }
 
 var m1 = regexp.MustCompile(`[^\w\-.]`)

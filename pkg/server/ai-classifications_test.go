@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestCompletion(t *testing.T) {
-	ai := newAiClassifier(nil)
+	ai := MakeAiClassifier(nil)
 
 	result, err := ai.Classify("This is a test")
 	if err == nil {
