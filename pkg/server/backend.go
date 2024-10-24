@@ -163,7 +163,7 @@ func (s *Session) handleMail() error {
 			msg := botapi.NewMessage(r.ChatId, content)
 
 			if r.WantsDebugInfo {
-				msg.ReplyMarkup = botapi.NewReplyKeyboard(botapi.NewKeyboardButtonRow(botapi.NewKeyboardButton("/block " + ip)))
+				msg.ReplyMarkup = botapi.NewReplyKeyboard(botapi.NewKeyboardButtonRow(botapi.NewKeyboardButton("/block "+ip), botapi.NewKeyboardButton("/reply")))
 			}
 			if r.User != nil {
 				r.User.LastMail = LastMail{From: s.From, Subject: s.Email.Headers.Subject}
