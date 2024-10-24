@@ -176,10 +176,7 @@ func (s *Session) handleMail() error {
 			if r.User != nil {
 				log.Printf("Setting user last email %s %s", s.From, s.Email.Headers.Subject)
 				usr := r.User
-				usr.LastMail = LastMail{
-					From:    s.From,
-					Subject: s.Email.Headers.Subject,
-				}
+				usr.SetLastMail(s.Email.Headers.Subject, s.From)
 			}
 			_, err = s.backend.Bot.Send(msg)
 			log.Printf("Sent email to %d (%s)", r.ChatId, r.Address)
