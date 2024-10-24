@@ -40,11 +40,11 @@ type LastMail struct {
 }
 
 type User struct {
-	Email          string   `json:"email"`
-	DebugInfo      bool     `json:"debugInfo"`
-	DefaultSubject string   `json:"defaultSubject"`
-	LastMail       LastMail `json:"-"`
-	ChatId         int64    `json:"chatId"`
+	Email          string    `json:"email"`
+	DebugInfo      bool      `json:"debugInfo"`
+	DefaultSubject string    `json:"defaultSubject"`
+	LastMail       *LastMail `json:"-"`
+	ChatId         int64     `json:"chatId"`
 }
 
 func readFile(file string) ([]byte, error) {
