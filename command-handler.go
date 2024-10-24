@@ -69,10 +69,11 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 				log.Printf("User %v", user)
 				return fmt.Errorf("user data not found")
 			}
-			subject := "Re " + user.LastMail.Subject
+			d := *user.LastMail
+			subject := "Re " + d.Subject
 
 			message := client.Message{
-				To:      user.LastMail.From,
+				To:      d.From,
 				From:    user.Email,
 				Subject: subject,
 				Body:    []byte(msg.CommandArguments()),
