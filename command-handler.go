@@ -68,7 +68,8 @@ func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 			if user == nil {
 				return fmt.Errorf("user data not found")
 			}
-			d := user.LastMail()
+			log.Printf("user data for reply", user)
+			d := user.GetLastMail()
 			if d.From == "" {
 				return fmt.Errorf("no last mail")
 			}

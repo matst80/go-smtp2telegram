@@ -45,17 +45,17 @@ type User struct {
 	Email          string   `json:"email"`
 	DebugInfo      bool     `json:"debugInfo"`
 	DefaultSubject string   `json:"defaultSubject"`
-	lastMail       LastMail `json:"-"`
+	LastMail       LastMail `json:"state"`
 	ChatId         int64    `json:"chatId"`
 }
 
 func (u *User) SetLastMail(subject, from string) {
-	u.lastMail.Subject = subject
-	u.lastMail.From = from
+	u.LastMail.Subject = subject
+	u.LastMail.From = from
 }
 
-func (u *User) LastMail() LastMail {
-	return u.lastMail
+func (u *User) GetLastMail() LastMail {
+	return u.LastMail
 }
 
 func readFile(file string) ([]byte, error) {
