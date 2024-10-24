@@ -63,31 +63,6 @@ func getDefaultSubject(user *server.User) string {
 func (cmd *commandHandler) OnMessage(msg *botapi.Message) error {
 	if msg.IsCommand() {
 		switch command := msg.Command(); command {
-		case "reply":
-			user := cmd.findUser(msg.Chat.ID)
-			if user == nil {
-				return fmt.Errorf("user data not found")
-			}
-			log.Printf("user data for reply", user)
-			d := user.GetLastMail()
-			if d.From == "" {
-				return fmt.Errorf("no last mail")
-			}
-			subject := "Re " + d.Subject
-
-			message := client.Message{
-				To:      d.From,
-				From:    user.Email,
-				Subject: subject,
-				Body:    []byte(msg.CommandArguments()),
-			}
-			fromDomain, err := message.FromDomain()
-			if err != nil {
-				return err
-			}
-			message.MessageID = client.MakeMessageId(fromDomain)
-			err = cmd.smtpClient.Send(message)
-			return err
 		case "send":
 			user := cmd.findUser(msg.Chat.ID)
 			if user == nil {

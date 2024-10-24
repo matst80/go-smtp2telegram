@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -170,14 +171,10 @@ func (s *Session) handleMail() error {
 			if r.WantsDebugInfo {
 				msg.ReplyMarkup = botapi.NewReplyKeyboard(botapi.NewKeyboardButtonRow(
 					botapi.NewKeyboardButton("/block "+ip),
-					botapi.NewKeyboardButton("/reply"),
+					botapi.NewKeyboardButton(fmt.Sprintf("/send To %s\nSubject %s\n", s.From, s.Email.Headers.Subject)),
 				))
 			}
-			if r.User != nil {
-				log.Printf("Setting user last email %s %s", s.From, s.Email.Headers.Subject)
-				usr := r.User
-				usr.SetLastMail(s.Email.Headers.Subject, s.From)
-			}
+
 			_, err = s.backend.Bot.Send(msg)
 			log.Printf("Sent email to %d (%s)", r.ChatId, r.Address)
 
