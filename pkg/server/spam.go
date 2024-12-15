@@ -40,6 +40,11 @@ func (s *Spam) IsSpamHtml(html string) bool {
 }
 
 func (s *Spam) IsSpamContent(text string) bool {
+	numberOfWords := len(strings.Fields(text))
+	if numberOfWords < 16 {
+		return false
+	}
+
 	for _, word := range s.SpamWords {
 		if strings.Contains(text, word) {
 			if s.Debug {
@@ -48,7 +53,7 @@ func (s *Spam) IsSpamContent(text string) bool {
 			return true
 		}
 	}
-	numberOfWords := len(strings.Fields(text))
+
 	var warningCount = 0
 	for _, word := range s.WarningWords {
 		f := strings.Count(text, word)

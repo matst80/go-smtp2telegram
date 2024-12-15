@@ -15,10 +15,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	dkimBytes, err := client.ReadFile("dkim.pem")
-	if err != nil {
-		log.Panic(err)
-	}
 
 	bot, err := botapi.NewBotAPI(config.Token)
 	if err != nil {
@@ -27,6 +23,11 @@ func main() {
 
 	h := &server.SimpleHash{
 		Salt: config.HashSalt,
+	}
+
+	dkimBytes, err := client.ReadFile("dkim.pem")
+	if err != nil {
+		log.Panic(err)
 	}
 
 	smtpClient, err := client.MakeSmtpClient(config.Domain, config.DkimSelector, dkimBytes)
@@ -43,19 +44,24 @@ func main() {
 		if config.BlockedIpUrl != "" {
 			err := spm.UpdateBlockedIpsFromUrl(config.BlockedIpUrl)
 			if err != nil {
-				log.Fatal("Error updating blocked ips", err)
+				log.Println("Error updating blocked ips", err)
 			}
 		}
 		if config.WarningWordsUrl != "" {
 			err := spm.UpdateWarningWordsFromUrl(config.WarningWordsUrl)
 			if err != nil {
-				log.Fatal("Error updating warning words", err)
+				log.Println("Error updating warning words", err)
 			}
 		}
 	}()
 
+	var spam server.SpamClassification = nil
+	if config.OpenAi.ApiKey != "" {
+		spam = server.MakeAiClassifier(&config.OpenAi)
+	}
+
 	s := smtp.NewServer(&server.Backend{
-		SpamClassifier: server.MakeAiClassifier(&config.OpenAi),
+		SpamClassifier: spam,
 		HashGenerator:  h,
 		Bot:            bot,
 		Config:         config,

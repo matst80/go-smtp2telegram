@@ -12,6 +12,10 @@ type SmtpClient struct {
 	Host    string
 }
 
+type SmtpHandler interface {
+	Send(msg Message) error
+}
+
 func MakeSmtpClient(host string, selector string, keyBytes []byte) (*SmtpClient, error) {
 	key, err := getPrivateKeyFromBytes(keyBytes)
 	if err != nil {
