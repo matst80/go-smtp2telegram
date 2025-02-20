@@ -154,6 +154,7 @@ func (s *Session) handleMail() error {
 		return nil
 	}
 	if s.Email.Headers.Subject == "" && s.Email.Text == "" {
+		s.backend.SpamChecker.LogSpamIp(ip)
 		log.Printf("No subject, discarding email from %s (%s)", s.From, ip)
 		return nil
 	}
