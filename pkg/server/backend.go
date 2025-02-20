@@ -153,6 +153,10 @@ func (s *Session) handleMail() error {
 		log.Printf("Spam detected (%s) [%s]", s.From, ip)
 		return nil
 	}
+	if s.Email.Headers.Subject == "" && s.Email.Text == "" {
+		log.Printf("No subject, discarding email from %s (%s)", s.From, ip)
+		return nil
+	}
 	var err error
 	var result *ClassificationResult
 	if len(s.To) > 0 {
