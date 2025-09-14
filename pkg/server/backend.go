@@ -146,7 +146,7 @@ func (s *Session) Logout() error {
 }
 
 func (s *Session) handleMail() error {
-	isSpam := s.backend.SpamChecker.IsSpamHtml(s.Email.HTML) || s.backend.SpamChecker.IsSpamContent(s.Email.Text)
+	isSpam := s.backend.SpamChecker.IsSpamHtml(s.Email.HTML) || s.backend.SpamChecker.IsSpamContent(s.Email.Text) || !s.HasValidDkim
 	ip := getIpFromAddr(s.Client)
 	if isSpam {
 		s.backend.SpamChecker.LogSpamIp(ip)
