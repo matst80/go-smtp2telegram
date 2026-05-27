@@ -48,7 +48,7 @@ func TestSpamContent(t *testing.T) {
 		t.Errorf("Expected to be acceptable")
 	}
 
-	warning = "This is a dating cash discount fantastic with a dating word 100% awesome"
+	warning = "This is a dating cash discount fantastic with a dating word 100% awesome and it should definitely be marked as spam because it has too many warning words in it"
 	if !s.IsSpamContent(warning) {
 		t.Errorf("Expected to be spam")
 	}

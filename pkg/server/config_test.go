@@ -5,6 +5,9 @@ import "testing"
 func TestExampleConfigRead(t *testing.T) {
 	config, err := GetConfig("config.example.json")
 	if err != nil {
+		config, err = GetConfig("../../config.example.json")
+	}
+	if err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
 	if len(config.Users) == 0 {
