@@ -41,6 +41,11 @@ func main() {
 		MaxSpamCount: 5,
 	}
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered from panic in spam update goroutine: %v", r)
+			}
+		}()
 		if config.BlockedIpUrl != "" {
 			err := spm.UpdateBlockedIpsFromUrl(config.BlockedIpUrl)
 			if err != nil {

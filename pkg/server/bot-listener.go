@@ -18,10 +18,17 @@ func ListenForMessages(bot *botapi.BotAPI, cmd CommandHandler) {
 
 	for update := range updates {
 		if update.Message != nil {
-			err := cmd.OnMessage(update.Message)
-			if err != nil {
-				log.Printf("Error: %v", err)
-			}
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Printf("Recovered from panic in OnMessage: %v", r)
+					}
+				}()
+				err := cmd.OnMessage(update.Message)
+				if err != nil {
+					log.Printf("Error: %v", err)
+				}
+			}()
 		}
 	}
 }
